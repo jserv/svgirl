@@ -122,8 +122,6 @@ struct svgtiny_diagram *svgtiny_create(void)
 		return 0;
 
 	return diagram;
-//	free(diagram);
-//	return NULL;
 }
 
 static void ignore_msg(uint32_t severity, void *ctx, const char *msg, ...)
@@ -1079,7 +1077,7 @@ svgtiny_code svgtiny_parse_line(dom_element *line,
 	svgtiny_parse_paint_attributes(line, &state);
 	svgtiny_parse_transform_attributes(line, &state);
 
-	p = malloc(6 * sizeof p[0]);
+	p = malloc(7 * sizeof p[0]);
 	if (!p) {
 		svgtiny_cleanup_state_local(&state);
 		return svgtiny_OUT_OF_MEMORY;
@@ -1091,8 +1089,9 @@ svgtiny_code svgtiny_parse_line(dom_element *line,
 	p[3] = svgtiny_PATH_LINE;
 	p[4] = x2;
 	p[5] = y2;
+	p[6] = svgtiny_PATH_CLOSE;
 
-	err = svgtiny_add_path(p, 6, &state);
+	err = svgtiny_add_path(p, 7, &state);
 
 	svgtiny_cleanup_state_local(&state);
 

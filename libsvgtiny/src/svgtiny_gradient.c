@@ -230,27 +230,17 @@ svgtiny_code svgtiny_parse_linear_gradient(dom_element *linear,
 					while (*s == ' ')
 						s++;
 					exc = dom_string_create_interned(
-						(const uint8_t *) s, strcspn(s, "; "), &value);
-					if (exc == DOM_NO_ERR && value != NULL) {
-						svgtiny_parse_color(value, &color, state);
+						(const uint8_t *) s,
+						strcspn(s, "; "),
+						&value);
+					if (exc != DOM_NO_ERR && 
+					    value != NULL) {
+						svgtiny_parse_color(value,
+								    &color,
+								    state);
 						dom_string_unref(value);
 					}
 				}
-        if ((s = strstr(content, "stop-opacity:"))) {
-					s += 13;
-					while (*s == ' ')
-						s++;
-					exc = dom_string_create_interned(
-						(const uint8_t *) s, strcspn(s, "; "), &value);
-					if (exc == DOM_NO_ERR && value != NULL) {
-            float f = svgtiny_parse_length(value, 1, *state);
-            if (0.0f <= f && f <= 1.0f) {
-              int alpha = f * 0xff;
-              color = (color & 0xFFFFFF) | (alpha << 24);
-            }
-            dom_string_unref(value);
-          }
-        }
 				free(content);
 				dom_string_unref(attr);
 			}
@@ -279,7 +269,7 @@ no_more_stops:
 
 float svgtiny_parse_gradient_offset(const char *s)
 {
-	int num_length = (int)strspn(s, "0123456789+-.");
+	int num_length = strspn(s, "0123456789+-.");
 	const char *unit = s + num_length;
 	float n = atof((const char *) s);
 
