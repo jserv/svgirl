@@ -10,11 +10,7 @@
 
 #include <stdbool.h>
 
-#ifdef USE_XML2 // Defined in Xcode project.
 #include "xml2dom.h"
-#else
-#include <dom/dom.h>
-#endif  // USE_XML2
 
 #ifndef UNUSED
 #define UNUSED(x) ((void) (x))

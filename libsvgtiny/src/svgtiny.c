@@ -14,12 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef USE_XML2 // Defined in Xcode project.
 #include "xml2dom.h"
-#else
-#include <dom/dom.h>
-#include <dom/bindings/xml/xmlparser.h>
-#endif  // USE_XML2
 
 #include "svgtiny.h"
 #include "svgtiny_internal.h"

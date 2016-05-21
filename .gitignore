@@ -2,3 +2,5 @@ build-*
 *~
 *out*
 tags
+*.o
+bin

@@ -19,7 +19,7 @@ SVGTINY_H= libsvgtiny/inc/svgtiny.h libsvgtiny/src/svgtiny_internal.h \
   libsvgtiny/src/xml2dom.h
 
 SVGDIRECTORIES= -I/usr/include/libxml2 -Ilibsvgtiny/inc -I.
-CFLAGS= $(SVGDIRECTORIES) -DUSE_XML2
+CFLAGS= $(SVGDIRECTORIES)
 all: bin/display_x11
 
 bin/libsvgtiny.a : $(SVGTINY_O) $(SVGTINY_H)
