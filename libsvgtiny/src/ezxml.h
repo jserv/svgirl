@@ -1,6 +1,7 @@
 /* ezxml.h
  *
  * Copyright 2004-2006 Aaron Voisine <aaron@voisine.org>
+ * Copyright 2016      John Chou <luckyjoou@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -39,8 +40,43 @@ extern "C" {
 #define EZXML_TXTM    0x40 // txt is malloced
 #define EZXML_DUP     0x20 // attribute name and value are strduped
 
+/*
+ * The different element types carried by an XML tree.
+ *
+ * NOTE: This is synchronized with DOM Level1 values
+ *       See http://www.w3.org/TR/REC-DOM-Level-1/
+ *
+ * Actually this had diverged a bit, and now XML_DOCUMENT_TYPE_NODE should
+ * be deprecated to use an XML_DTD_NODE.
+ */
+typedef enum {
+	XML_ELEMENT_NODE=       1,
+	XML_ATTRIBUTE_NODE=     2,
+	XML_TEXT_NODE=      3,
+	XML_CDATA_SECTION_NODE= 4,
+	XML_ENTITY_REF_NODE=    5,
+	XML_ENTITY_NODE=        6,
+	XML_PI_NODE=        7,
+	XML_COMMENT_NODE=       8,
+	XML_DOCUMENT_NODE=      9,
+	XML_DOCUMENT_TYPE_NODE= 10,
+	XML_DOCUMENT_FRAG_NODE= 11,
+	XML_NOTATION_NODE=      12,
+	XML_HTML_DOCUMENT_NODE= 13,
+	XML_DTD_NODE=       14,
+	XML_ELEMENT_DECL=       15,
+	XML_ATTRIBUTE_DECL=     16,
+	XML_ENTITY_DECL=        17,
+	XML_NAMESPACE_DECL=     18,
+	XML_XINCLUDE_START=     19,
+	XML_XINCLUDE_END=       20,
+	XML_DOCB_DOCUMENT_NODE= 21
+} xmlElementType;
+
+// Rename elements of ezxml structure to be consistent with libxml2 structure
 typedef struct ezxml *ezxml_t;
 struct ezxml {
+	xmlElementType type;
     char *name;      // tag name
     char **attr;     // tag attributes { name, value, name, value, ... NULL }
     char *txt;       // tag character content, empty string if none

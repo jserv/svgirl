@@ -13,59 +13,56 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-
-struct _xmlNode;  // forward declaration.
+#include "ezxml.h"
 
 typedef struct dom_node {
-  struct _xmlNode *node;
-  int ref;
+	ezxml_t node;
+	int ref;
 } dom_node;
 
 typedef dom_node dom_document;
 typedef dom_node dom_element;
 
-struct _xmlDoc; // forward declaration.
-
 typedef struct dom_xml_parser {
-  struct _xmlDoc *parser;
-  dom_document *doc;
+	// struct _xmlDoc *parser;
+	dom_document *doc;
 } dom_xml_parser;
 
 typedef enum {
-  DOM_NO_ERR = 0,
-  DOM_FILE_ERR = 1,
-  DOM_MEM_ERR = 2,
+	DOM_NO_ERR = 0,
+	DOM_FILE_ERR = 1,
+	DOM_MEM_ERR = 2,
 } dom_exception;
 
 typedef enum {
-  lwc_error_ok = 0,
-  lwc_error_bad
+	lwc_error_ok = 0,
+	lwc_error_bad
 } lwc_error;
 
 typedef enum {
-  DOM_ELEMENT_NODE,
-  DOM_ATTRIBUTE_NODE,
-  DOM_TEXT_NODE,
-  DOM_COMMENT_NODE,
-  DOM_DOCUMENT_NODE,
-  DOM_NODELIST_NODE,
-  DOM_OTHER_NODE,
+	DOM_ELEMENT_NODE,
+	DOM_ATTRIBUTE_NODE,
+	DOM_TEXT_NODE,
+	DOM_COMMENT_NODE,
+	DOM_DOCUMENT_NODE,
+	DOM_NODELIST_NODE,
+	DOM_OTHER_NODE,
 } dom_node_type;
 
 typedef enum {
-  DOM_XML_OK = 0,
-  DOM_XML_MALFORMED = 1,
+	DOM_XML_OK = 0,
+	DOM_XML_MALFORMED = 1,
 } dom_xml_error;
 
 typedef struct dom_nodelist {
-  dom_node **nodes;  // alocated on the heap.
-  int ref;
-  int count;
+	dom_node **nodes;  // alocated on the heap.
+	int ref;
+	int count;
 } dom_nodelist;
 
 typedef struct dom_string {
-  char *s;  // alocated on the heap.
-  int ref;
+	char *s;  // alocated on the heap.
+	int ref;
 } dom_string;
 
 typedef dom_string lwc_string;
