@@ -45,9 +45,9 @@ dom_xml_parser *dom_xml_parser_create(void *dontCare1, void *dontCare2, MesgFunc
 
 dom_xml_error dom_xml_parser_parse_chunk(dom_xml_parser *parser, const uint8_t *data, size_t len) {
   assert(parser);
-  /* xmlDoc *doc = xmlReadMemory((const char *)data, (int)len, NULL, NULL, XML_PARSE_NOCDATA | XML_PARSE_NOBLANKS); */
   ezxml_t doc = ezxml_parse_str((const char *)data, len);
   if (doc) {
+	doc->type = XML_DOCUMENT_NODE;
     parser->doc->node = doc;
     parser->doc->ref = MAGIC_DOCUMENT_NODE;
     return DOM_XML_OK;
@@ -69,8 +69,6 @@ dom_exception dom_document_get_document_element(dom_document *document, dom_elem
   dom_element *element = (dom_element *)calloc(sizeof(dom_element), 1);
   /* element->node = xmlDocGetRootElement((xmlDoc *)(document->node)); */
   element->node = document->node;
-  char *s;
-  printf("%s\n", (s = ezxml_toxml(document->node)));
   element->ref = 1;
   *outNode = element;
   return DOM_NO_ERR;
@@ -220,7 +218,15 @@ int dom_string_caseless_isequal(dom_string *as, dom_string *bs) {
 
 dom_exception dom_node_get_next_sibling(dom_element *element, dom_element **outChild) {
   dom_element *nextElement = NULL;
-  ezxml_t child = element->node->next;
+  ezxml_t child;
+
+  // Find all sub tags!
+  if ( element->node->next ) {
+	  child = element->node->next;
+  }else {
+	  child = element->node->sibling;
+  }
+  
   if (child) {
     nextElement = (dom_element *)calloc(sizeof(dom_element), 1);
     nextElement->node = child;

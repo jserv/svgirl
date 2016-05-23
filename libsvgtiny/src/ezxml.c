@@ -79,13 +79,13 @@ const char *ezxml_attr(ezxml_t xml, const char *attr)
     ezxml_root_t root = (ezxml_root_t)xml;
 
     if (! xml || ! xml->attr) return NULL;
-    while (xml->attr[i] && strcmp(attr, xml->attr[i])) i += 2;
+    while (xml->attr[i] && strcasecmp(attr, xml->attr[i])) i += 2;
     if (xml->attr[i]) return xml->attr[i + 1]; // found attribute
 
     while (root->xml.parent) root = (ezxml_root_t)root->xml.parent; // root tag
-    for (i = 0; root->attr[i] && strcmp(xml->name, root->attr[i][0]); i++);
+    for (i = 0; root->attr[i] && strcasecmp(xml->name, root->attr[i][0]); i++);
     if (! root->attr[i]) return NULL; // no matching default attributes
-    while (root->attr[i][j] && strcmp(attr, root->attr[i][j])) j += 3;
+    while (root->attr[i][j] && strcasecmp(attr, root->attr[i][j])) j += 3;
     return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL; // found default
 }
 
@@ -899,6 +899,7 @@ ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
     child->name = (char *)name;
     child->attr = EZXML_NIL;
     child->txt = "";
+	child->type = XML_ELEMENT_NODE;
 
     return ezxml_insert(child, xml, off);
 }

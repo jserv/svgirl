@@ -1586,6 +1586,7 @@ void svgtiny_parse_font_attributes(dom_element *node,
 
 	UNUSED(state);
 
+	/* TODO: node->properties no longer exist */
 	for (attr = node->properties; attr; attr = attr->next) {
 		if (strcmp((const char *) attr->name, "font-size") == 0) {
 			/*if (css_parse_length(
