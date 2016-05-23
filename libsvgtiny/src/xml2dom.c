@@ -13,8 +13,6 @@
 #include <ctype.h>
 #include <string.h>
 
-static int sDidInitXML2Lib = 0;
-
 enum  {
   MAGIC_DOCUMENT_NODE =  10000
 };
