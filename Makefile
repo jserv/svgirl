@@ -8,33 +8,26 @@ SVGTINY_C= libsvgtiny/src/svgColor2.c \
   libsvgtiny/src/xml2dom.c \
   libsvgtiny/src/ezxml.c
 
-SVGTINY_O= libsvgtiny/src/svgColor2.o \
-  libsvgtiny/src/svgtiny.o \
-  libsvgtiny/src/svgtiny_gradient.o \
-  libsvgtiny/src/svgtiny_list.o \
-  libsvgtiny/src/xml2dom.o \
-  libsvgtiny/src/ezxml.o
-
-
 SVGTINY_H= libsvgtiny/inc/svgtiny.h libsvgtiny/src/svgtiny_internal.h \
   libsvgtiny/src/svgtiny_strings.h \
   libsvgtiny/src/xml2dom.h \
   libsvgtiny/src/ezxml.h
 
-SVGDIRECTORIES= -Ilibsvgtiny/inc -I.
+SVGDIRECTORIES= -Ilibsvgtiny/inc -Ilibsvgtiny/src -I.
 CFLAGS= $(SVGDIRECTORIES)
 all: bin/display_x11
 
-bin/libsvgtiny.a : $(SVGTINY_O) $(SVGTINY_H)
-	- mkdir bin
-	ar rs bin/libsvgtiny.a $(SVGTINY_O)
+# bin/libsvgtiny.a : $(SVGTINY_O) $(SVGTINY_H)
+# 	- mkdir bin
+# 	ar rs bin/libsvgtiny.a $(SVGTINY_O)
 
-bin/display_x11 : bin/libsvgtiny.a  examples/svgtiny_display_x11.c
-	cc $(CFLAGS) -o bin/display_x11 examples/svgtiny_display_x11.c bin/libsvgtiny.a -lm -I/usr/include/cairo -L/usr/local/lib/ -lcairo -lX11
+bin/display_x11 : examples/svgtiny_display_x11.c $(SVGTINY_C)
+	- mkdir bin
+	cc $(CFLAGS) -g -o bin/display_x11 examples/svgtiny_display_x11.c $(SVGTINY_C) -lm -I/usr/include/cairo -L/usr/local/lib/ -lcairo -lX11
 
 test: bin/display_x11
 	bin/display_x11 img/apple.svg
 
 clean:
-	rm -rf $(SVGTINY_O) $(SVGTINYWRITER_O) bin
+	rm -rf bin
 
