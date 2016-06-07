@@ -74,8 +74,8 @@ static void svgtiny_setup_state_local(struct svgtiny_parse_state *state)
 	if (state->gradient_y2 != NULL) {
 		dom_string_ref(state->gradient_y2);
 	}
-  state->fill = 0;
-  state->stroke = 0;
+  /* state->fill = 0; */
+  /* state->stroke = 0; */
 }
 
 /**
@@ -1468,7 +1468,7 @@ void svgtiny_parse_paint_attributes(dom_element *node,
       }
 			free(value);
     }
-		if ((s = strstr(style, "stroke-opacity:")) && (svgtiny_TRANSPARENT != state->stroke)) {
+		if ((s = strstr(style, "stroke-opacity:"))) {
       float f;
  			s += 15;
 			while (*s == ' ')
@@ -1553,13 +1553,14 @@ static void _svgtiny_parse_color(const char *s, svgtiny_colour *c,
 {
   svgtiny_colour innerColor;
   _svgtiny_parse_color_inner(s, &innerColor, state);
-  if (innerColor == svgtiny_TRANSPARENT || innerColor == svgtiny_LINEAR_GRADIENT) {
-    *c = innerColor;
-  } else if (*c) {
-    *c = (*c & 0xFF000000) | (0xFFFFFF & innerColor);
-  } else {
-    *c = 0xFF000000 | (0xFFFFFF & innerColor);
-  }
+  /* if (innerColor == svgtiny_TRANSPARENT || innerColor == svgtiny_LINEAR_GRADIENT) { */
+  /*   *c = innerColor; */
+  /* } else if (*c) { */
+  /*   *c = (*c & 0xFF000000) | (0xFFFFFF & innerColor); */
+  /* } else { */
+  /*   *c = 0xFF000000 | (0xFFFFFF & innerColor); */
+  /* } */
+  *c = innerColor;
 }
 
 
@@ -1586,7 +1587,6 @@ void svgtiny_parse_font_attributes(dom_element *node,
 
 	UNUSED(state);
 
-	/* TODO: node->properties no longer exist */
 	for (attr = node->properties; attr; attr = attr->next) {
 		if (strcmp((const char *) attr->name, "font-size") == 0) {
 			/*if (css_parse_length(
