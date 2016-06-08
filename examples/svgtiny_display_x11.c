@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	}
 	svg_path = argv[1];
 #else
-	svg_path = "img/apple.svg";
+	svg_path = "img/clock.svg";
 #endif
 
 	/* load file into memory buffer */

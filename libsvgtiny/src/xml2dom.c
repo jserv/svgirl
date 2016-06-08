@@ -216,14 +216,7 @@ int dom_string_caseless_isequal(dom_string *as, dom_string *bs) {
 
 dom_exception dom_node_get_next_sibling(dom_element *element, dom_element **outChild) {
   dom_element *nextElement = NULL;
-  ezxml_t child;
-
-  // Find all sub tags!
-  if ( element->node->next ) {
-	  child = element->node->next;
-  }else {
-	  child = element->node->sibling;
-  }
+  ezxml_t child = element->node->ordered;
   
   if (child) {
     nextElement = (dom_element *)calloc(sizeof(dom_element), 1);
