@@ -74,8 +74,6 @@ static void svgtiny_setup_state_local(struct svgtiny_parse_state *state)
 	if (state->gradient_y2 != NULL) {
 		dom_string_ref(state->gradient_y2);
 	}
-  /* state->fill = 0; */
-  /* state->stroke = 0; */
 }
 
 /**
@@ -228,20 +226,8 @@ svgtiny_code svgtiny_parse_inner(struct svgtiny_diagram *diagram,
 #undef SVGTINY_STRING_ACTION2
 
 	svgtiny_parse_position_attributes(svg, state, &x, &y, &width, &height);
-  if (width <= 0 && 0 < height) {
-    width = height;
-  }
-  if (height <= 0 && 0 < width) {
-    height = width;
-  }
 	diagram->width = width;
 	diagram->height = height;
-  if (state.viewport_width <= 0) {
-    state.viewport_width = width;
-  }
-  if (state.viewport_height <= 0) {
-    state.viewport_width = height;
-  }
 
 	/* set up parsing state */
 	state.viewport_width = width;
@@ -1491,7 +1477,7 @@ void svgtiny_parse_paint_attributes(dom_element *node,
  * Parse a colour.
  */
 
-static void _svgtiny_parse_color_inner(const char *s, svgtiny_colour *c,
+static void _svgtiny_parse_color(const char *s, svgtiny_colour *c,
 		struct svgtiny_parse_state *state)
 {
 	unsigned int r, g, b;
@@ -1547,22 +1533,6 @@ static void _svgtiny_parse_color_inner(const char *s, svgtiny_colour *c,
 			*c = named_color->color;
 	}
 }
-
-static void _svgtiny_parse_color(const char *s, svgtiny_colour *c,
-		struct svgtiny_parse_state *state)
-{
-  svgtiny_colour innerColor;
-  _svgtiny_parse_color_inner(s, &innerColor, state);
-  /* if (innerColor == svgtiny_TRANSPARENT || innerColor == svgtiny_LINEAR_GRADIENT) { */
-  /*   *c = innerColor; */
-  /* } else if (*c) { */
-  /*   *c = (*c & 0xFF000000) | (0xFFFFFF & innerColor); */
-  /* } else { */
-  /*   *c = 0xFF000000 | (0xFFFFFF & innerColor); */
-  /* } */
-  *c = innerColor;
-}
-
 
 void svgtiny_parse_color(dom_string *s, svgtiny_colour *c,
 		struct svgtiny_parse_state *state)
