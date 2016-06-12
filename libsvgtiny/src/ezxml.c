@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+/* #include <unistd.h> */
 #include <sys/types.h>
 #ifndef EZXML_NOMMAP
 #include <sys/mman.h>

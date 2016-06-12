@@ -14,8 +14,8 @@ SVGTINY_H= libsvgtiny/inc/svgtiny.h libsvgtiny/src/svgtiny_internal.h \
   libsvgtiny/src/ezxml.h
 
 SVGDIRECTORIES= -Ilibsvgtiny/inc -Ilibsvgtiny/src -I.
-# CFLAGS= $(SVGDIRECTORIES) -DDEBUG_MODE
-CFLAGS= $(SVGDIRECTORIES)
+# CFLAGS= $(SVGDIRECTORIES) -DDEBUG_MODE -DEZXML_NOMMAP
+CFLAGS= $(SVGDIRECTORIES) -DEZXML_NOMMAP
 all: bin/display_x11
 
 # bin/libsvgtiny.a : $(SVGTINY_O) $(SVGTINY_H)

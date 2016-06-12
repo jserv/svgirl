@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* parse */
-	code = svgtiny_parse(diagram, buffer, size, svg_path, 1000, 1000);
+	code = svgtiny_parse(diagram, buffer, size, svg_path, 240, 320);
 	if (code != svgtiny_OK) {
 		fprintf(stderr, "svgtiny_parse failed: ");
 		switch (code) {

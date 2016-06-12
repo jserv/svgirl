@@ -230,8 +230,8 @@ svgtiny_code svgtiny_parse_inner(struct svgtiny_diagram *diagram,
 	diagram->height = height;
 
 	/* set up parsing state */
-	state.viewport_width = width;
-	state.viewport_height = height;
+	/* state.viewport_width = width; */
+	/* state.viewport_height = height; */
 	state.ctm.a = 1; /*(float) viewport_width / (float) width;*/
 	state.ctm.b = 0;
 	state.ctm.c = 0;
