@@ -103,7 +103,7 @@ returned, but the diagram is still valid up to the point of the
 error. The error is recorded in `diagram->error_message` and the line
 that caused it in `diagram->error_line`.
 
-`svgtiny_LIBXML_ERROR` indicates that parsing the XML failed. The
+`svgtiny_LIBDOM_ERROR` indicates that parsing the XML failed. The
 returned diagram will contain no shapes. `svgtiny_NOT_SVG` means that
 the XML did not contain a top-level <svg> element.
 

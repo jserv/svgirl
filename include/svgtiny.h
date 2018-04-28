@@ -64,7 +64,6 @@ typedef enum {
     svgtiny_LIBDOM_ERROR,
     svgtiny_NOT_SVG,
     svgtiny_SVG_ERROR,
-    svgtiny_LIBXML_ERROR
 } svgtiny_code;
 
 enum {
