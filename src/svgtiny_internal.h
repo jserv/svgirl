@@ -23,6 +23,16 @@ struct svgtiny_gradient_stop {
 
 #define svgtiny_MAX_STOPS 10
 
+struct svgtiny_parse_state_gradient {
+    unsigned int linear_gradient_stop_count;
+    dom_string *gradient_x1, *gradient_y1, *gradient_x2, *gradient_y2;
+    struct svgtiny_gradient_stop gradient_stop[svgtiny_MAX_STOPS];
+    bool gradient_user_space_on_use;
+    struct {
+        float a, b, c, d, e, f;
+    } gradient_transform;
+};
+
 struct svgtiny_parse_state {
     struct svgtiny_diagram *diagram;
     dom_document *document;
@@ -44,13 +54,8 @@ struct svgtiny_parse_state {
     float stroke_width;
 
     /* gradients */
-    unsigned int linear_gradient_stop_count;
-    dom_string *gradient_x1, *gradient_y1, *gradient_x2, *gradient_y2;
-    struct svgtiny_gradient_stop gradient_stop[svgtiny_MAX_STOPS];
-    bool gradient_user_space_on_use;
-    struct {
-        float a, b, c, d, e, f;
-    } gradient_transform;
+    struct svgtiny_parse_state_gradient fill_grad;
+    struct svgtiny_parse_state_gradient stroke_grad;
 
 /* Interned strings */
 #define SVGTINY_STRING_ACTION2(n, nn) dom_string *interned_##n;
@@ -66,6 +71,7 @@ float svgtiny_parse_length(dom_string *s,
                            const struct svgtiny_parse_state state);
 void svgtiny_parse_color(dom_string *s,
                          svgtiny_colour *c,
+                         struct svgtiny_parse_state_gradient *grad,
                          struct svgtiny_parse_state *state);
 void svgtiny_parse_transform(char *s,
                              float *ma,
@@ -88,7 +94,9 @@ char *svgtiny_strndup(const char *s, size_t n);
 #endif
 
 /* svgtiny_gradient.c */
-void svgtiny_find_gradient(const char *id, struct svgtiny_parse_state *state);
+void svgtiny_find_gradient(const char *id,
+                           struct svgtiny_parse_state_gradient *grad,
+                           struct svgtiny_parse_state *state);
 svgtiny_code svgtiny_add_path_linear_gradient(
     float *p,
     unsigned int n,
