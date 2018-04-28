@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "xml2dom.h"
+#include "dom.h"
 
 #include "svgtiny.h"
 #include "svgtiny_internal.h"

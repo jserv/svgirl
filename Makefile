@@ -11,7 +11,7 @@ OBJS = \
     src/svgtiny.o \
     src/svgtiny_gradient.o \
     src/svgtiny_list.o \
-    src/xml2dom.o \
+    src/dom.o \
     src/ezxml.o
 
 deps := $(OBJS:%.o=%.d)

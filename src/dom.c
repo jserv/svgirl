@@ -7,7 +7,7 @@
  * ezxml wrapper for DOM manipulation.
  */
 
-#include "xml2dom.h"
+#include "dom.h"
 
 #include <assert.h>
 #include <ctype.h>

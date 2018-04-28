@@ -10,7 +10,7 @@
 
 #include <stdbool.h>
 
-#include "xml2dom.h"
+#include "dom.h"
 
 #ifndef UNUSED
 #define UNUSED(x) ((void) (x))
