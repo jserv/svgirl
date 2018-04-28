@@ -1,0 +1,19 @@
+SVGirl is written by
+  John Chou <luckyjoou@gmail.com>
+  Jim Huang <jserv.tw@gmail.com>
+
+External sources:
+
+* libsvgtiny
+  James Bursa <james@netsurf-browser.org>
+  Daniel Silverstone <dsilvers@digital-scurf.org>
+  John-Mark Bell <jmb@netsurf-browser.org>
+  Michael Drake <tlsa@netsurf-browser.org>
+  Chris Young <chris@unsatisfactorysoftware.co.uk>
+  Vincent Sanders <vince@kyllikki.org>
+
+* libsvgtiny fork
+  David Phillip Oster <DavidPhillipOster@gmail.com>
+
+* ezxml
+  Aaron Voisine <aaron@voisine.org>
