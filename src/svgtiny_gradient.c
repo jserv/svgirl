@@ -438,6 +438,12 @@ svgtiny_code svgtiny_add_path_linear_gradient(float *p,
         y0 = y1;
     }
 
+    /* There must be at least a single point for the gradient */
+    if (svgtiny_list_size(pts) == 0) {
+        svgtiny_list_free(pts);
+        return svgtiny_OK;
+    }
+
     /* render triangles */
     stop_count = state->linear_gradient_stop_count;
     assert(2 <= stop_count);
