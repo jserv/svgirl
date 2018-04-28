@@ -1636,6 +1636,7 @@ void svgtiny_parse_transform(char *s,
         a = d = 1;
         b = c = 0;
         e = f = 0;
+        n = 0;
         if ((sscanf(s, " matrix (%f %f %f %f %f %f ) %n", &a, &b, &c, &d, &e,
                     &f, &n) == 6) &&
             (n > 0))
