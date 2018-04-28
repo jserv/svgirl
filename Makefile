@@ -1,34 +1,31 @@
-# A simple makefile to make or test the display_x11.
-# part of libsvgtiny. M.I.T. license
+CFLAGS := \
+    -Wall -std=gnu99 -O2 \
+    -I./include \
+    -I. -MMD
 
-SVGTINY_C= libsvgtiny/src/svgColor2.c \
-  libsvgtiny/src/svgtiny.c \
-  libsvgtiny/src/svgtiny_gradient.c \
-  libsvgtiny/src/svgtiny_list.c \
-  libsvgtiny/src/xml2dom.c \
-  libsvgtiny/src/ezxml.c
+OBJS = \
+    src/svgtiny_color.o \
+    src/svgtiny.o \
+    src/svgtiny_gradient.o \
+    src/svgtiny_list.o \
+    src/xml2dom.o \
+    src/ezxml.o
 
-SVGTINY_H= libsvgtiny/inc/svgtiny.h libsvgtiny/src/svgtiny_internal.h \
-  libsvgtiny/src/svgtiny_strings.h \
-  libsvgtiny/src/xml2dom.h \
-  libsvgtiny/src/ezxml.h
+deps := $(OBJS:%.o=%.d)
 
-SVGDIRECTORIES= -Ilibsvgtiny/inc -Ilibsvgtiny/src -I.
-# CFLAGS= $(SVGDIRECTORIES) -DDEBUG_MODE -DEZXML_NOMMAP
-CFLAGS= $(SVGDIRECTORIES) -DEZXML_NOMMAP
 all: bin/display_x11
 
-# bin/libsvgtiny.a : $(SVGTINY_O) $(SVGTINY_H)
-# 	- mkdir bin
-# 	ar rs bin/libsvgtiny.a $(SVGTINY_O)
-
-bin/display_x11 : examples/svgtiny_display_x11.c $(SVGTINY_C)
-	- mkdir bin
-	cc $(CFLAGS) -g -o bin/display_x11 examples/svgtiny_display_x11.c $(SVGTINY_C) -lm -I/usr/include/cairo -L/usr/local/lib/ -lcairo -lX11
+bin/display_x11 : examples/svgtiny_display_x11.c $(OBJS)
+	mkdir -p bin
+	$(CC) $(CFLAGS) -g \
+		-o bin/display_x11 examples/svgtiny_display_x11.c \
+		$(OBJS) \
+		`pkg-config --cflags --libs cairo` -lm -lX11
 
 test: bin/display_x11
 	bin/display_x11 img/apple.svg
 
 clean:
-	rm -rf bin
+	$(RM) bin/display_x11 $(OBJS) $(deps)
 
+-include $(deps)

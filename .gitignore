@@ -3,4 +3,5 @@ build-*
 *out*
 tags
 *.o
+*.d
 bin

@@ -8,7 +8,7 @@
 #error No action defined
 #endif
 
-#define SVGTINY_STRING_ACTION(s) SVGTINY_STRING_ACTION2(s,s)
+#define SVGTINY_STRING_ACTION(s) SVGTINY_STRING_ACTION2(s, s)
 
 SVGTINY_STRING_ACTION(svg)
 SVGTINY_STRING_ACTION(viewBox)
@@ -39,7 +39,7 @@ SVGTINY_STRING_ACTION(polygon)
 SVGTINY_STRING_ACTION(text)
 SVGTINY_STRING_ACTION(tspan)
 SVGTINY_STRING_ACTION(fill)
-SVGTINY_STRING_ACTION2(fill_opacity,fill-opacity)
+SVGTINY_STRING_ACTION2(fill_opacity, fill - opacity)
 SVGTINY_STRING_ACTION(stroke)
 SVGTINY_STRING_ACTION(style)
 SVGTINY_STRING_ACTION(transform)
@@ -50,11 +50,11 @@ SVGTINY_STRING_ACTION(offset)
 SVGTINY_STRING_ACTION(gradientUnits)
 SVGTINY_STRING_ACTION(gradientTransform)
 SVGTINY_STRING_ACTION(userSpaceOnUse)
-SVGTINY_STRING_ACTION2(stroke_width,stroke-width)
-SVGTINY_STRING_ACTION2(stroke_opacity,stroke-opacity)
-SVGTINY_STRING_ACTION2(stop_color,stop-color)
-SVGTINY_STRING_ACTION2(stop_opacity,stop-opacity)
-SVGTINY_STRING_ACTION2(zero_percent,0%)
-SVGTINY_STRING_ACTION2(hundred_percent,100%)
+SVGTINY_STRING_ACTION2(stroke_width, stroke - width)
+SVGTINY_STRING_ACTION2(stroke_opacity, stroke - opacity)
+SVGTINY_STRING_ACTION2(stop_color, stop - color)
+SVGTINY_STRING_ACTION2(stop_opacity, stop - opacity)
+SVGTINY_STRING_ACTION2(zero_percent, 0 %)
+SVGTINY_STRING_ACTION2(hundred_percent, 100 %)
 
 #undef SVGTINY_STRING_ACTION

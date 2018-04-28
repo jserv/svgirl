@@ -35,10 +35,10 @@
 extern "C" {
 #endif
 
-#define EZXML_BUFSIZE 1024 // size of internal memory buffers
-#define EZXML_NAMEM   0x80 // name is malloced
-#define EZXML_TXTM    0x40 // txt is malloced
-#define EZXML_DUP     0x20 // attribute name and value are strduped
+#define EZXML_BUFSIZE 1024  // size of internal memory buffers
+#define EZXML_NAMEM 0x80    // name is malloced
+#define EZXML_TXTM 0x40     // txt is malloced
+#define EZXML_DUP 0x20      // attribute name and value are strduped
 
 /*
  * The different element types carried by an XML tree.
@@ -50,43 +50,43 @@ extern "C" {
  * be deprecated to use an XML_DTD_NODE.
  */
 typedef enum {
-	XML_ELEMENT_NODE=       1,
-	XML_ATTRIBUTE_NODE=     2,
-	XML_TEXT_NODE=      3,
-	XML_CDATA_SECTION_NODE= 4,
-	XML_ENTITY_REF_NODE=    5,
-	XML_ENTITY_NODE=        6,
-	XML_PI_NODE=        7,
-	XML_COMMENT_NODE=       8,
-	XML_DOCUMENT_NODE=      9,
-	XML_DOCUMENT_TYPE_NODE= 10,
-	XML_DOCUMENT_FRAG_NODE= 11,
-	XML_NOTATION_NODE=      12,
-	XML_HTML_DOCUMENT_NODE= 13,
-	XML_DTD_NODE=       14,
-	XML_ELEMENT_DECL=       15,
-	XML_ATTRIBUTE_DECL=     16,
-	XML_ENTITY_DECL=        17,
-	XML_NAMESPACE_DECL=     18,
-	XML_XINCLUDE_START=     19,
-	XML_XINCLUDE_END=       20,
-	XML_DOCB_DOCUMENT_NODE= 21
+    XML_ELEMENT_NODE = 1,
+    XML_ATTRIBUTE_NODE = 2,
+    XML_TEXT_NODE = 3,
+    XML_CDATA_SECTION_NODE = 4,
+    XML_ENTITY_REF_NODE = 5,
+    XML_ENTITY_NODE = 6,
+    XML_PI_NODE = 7,
+    XML_COMMENT_NODE = 8,
+    XML_DOCUMENT_NODE = 9,
+    XML_DOCUMENT_TYPE_NODE = 10,
+    XML_DOCUMENT_FRAG_NODE = 11,
+    XML_NOTATION_NODE = 12,
+    XML_HTML_DOCUMENT_NODE = 13,
+    XML_DTD_NODE = 14,
+    XML_ELEMENT_DECL = 15,
+    XML_ATTRIBUTE_DECL = 16,
+    XML_ENTITY_DECL = 17,
+    XML_NAMESPACE_DECL = 18,
+    XML_XINCLUDE_START = 19,
+    XML_XINCLUDE_END = 20,
+    XML_DOCB_DOCUMENT_NODE = 21
 } xmlElementType;
 
 // Rename elements of ezxml structure to be consistent with libxml2 structure
 typedef struct ezxml *ezxml_t;
 struct ezxml {
-	xmlElementType type;
-    char *name;      // tag name
-    char **attr;     // tag attributes { name, value, name, value, ... NULL }
-    char *txt;       // tag character content, empty string if none
-    size_t off;      // tag offset from start of parent tag character content
-    ezxml_t next;    // next tag with same name in this section at this depth
-    ezxml_t sibling; // next tag with different name in same section and depth
-    ezxml_t ordered; // next tag, same section and depth, in original order
-    ezxml_t child;   // head of sub tag list, NULL if none
-    ezxml_t parent;  // parent tag, NULL if current tag is root tag
-    short flags;     // additional information
+    xmlElementType type;
+    char *name;       // tag name
+    char **attr;      // tag attributes { name, value, name, value, ... NULL }
+    char *txt;        // tag character content, empty string if none
+    size_t off;       // tag offset from start of parent tag character content
+    ezxml_t next;     // next tag with same name in this section at this depth
+    ezxml_t sibling;  // next tag with different name in same section and depth
+    ezxml_t ordered;  // next tag, same section and depth, in original order
+    ezxml_t child;    // head of sub tag list, NULL if none
+    ezxml_t parent;   // parent tag, NULL if current tag is root tag
+    short flags;      // additional information
 };
 
 // Given a string of xml data and its length, parses it and creates an ezxml
@@ -102,7 +102,7 @@ ezxml_t ezxml_parse_fd(int fd);
 
 // a wrapper for ezxml_parse_fd() that accepts a file name
 ezxml_t ezxml_parse_file(const char *file);
-    
+
 // Wrapper for ezxml_parse_str() that accepts a file stream. Reads the entire
 // stream into memory and then parses it. For xml files, use ezxml_parse_file()
 // or ezxml_parse_fd()
@@ -131,7 +131,7 @@ const char *ezxml_attr(ezxml_t xml, const char *attr);
 
 // Traverses the ezxml sturcture to retrieve a specific subtag. Takes a
 // variable length list of tag names and indexes. The argument list must be
-// terminated by either an index of -1 or an empty string tag name. Example: 
+// terminated by either an index of -1 or an empty string tag name. Example:
 // title = ezxml_get(library, "shelf", 0, "book", 2, "title", -1);
 // This retrieves the title of the 3rd book on the 1st shelf of library.
 // Returns NULL if not found.
@@ -147,7 +147,7 @@ const char **ezxml_pi(ezxml_t xml, const char *target);
 
 // frees the memory allocated for an ezxml structure
 void ezxml_free(ezxml_t xml);
-    
+
 // returns parser error message or empty string if none
 const char *ezxml_error(ezxml_t xml);
 
@@ -200,4 +200,4 @@ ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off);
 }
 #endif
 
-#endif // _EZXML_H
+#endif  // _EZXML_H
