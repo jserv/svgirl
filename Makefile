@@ -18,6 +18,7 @@ deps := $(OBJS:%.o=%.d)
 
 TESTS := \
     tests/ezxml \
+    tests/svgtiny
 
 tests/%: tests/%.o
 	$(CC) $(CFLAGS) -o $@ $^ $(OBJS) $(LDFLAGS)
