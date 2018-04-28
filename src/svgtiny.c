@@ -1525,9 +1525,9 @@ void svgtiny_parse_color(dom_string *s,
                          svgtiny_colour *c,
                          struct svgtiny_parse_state *state)
 {
-    char *ss = strndup(dom_string_data(s), dom_string_byte_length(s));
-    _svgtiny_parse_color(ss, c, state);
-    free(ss);
+    dom_string_ref(s);
+    _svgtiny_parse_color(dom_string_data(s), c, state);
+    dom_string_unref(s);
 }
 
 /**
