@@ -27,11 +27,10 @@ all: $(OBJS) $(TESTS)
 
 EXAMPLES := \
 	bin/display_x11
-bin/display_x11 : examples/svgtiny_display_x11.c $(OBJS)
+bin/display_x11: examples/svgtiny_display_x11.c $(OBJS)
 	mkdir -p bin
 	$(CC) $(CFLAGS) -g \
-		-o bin/display_x11 examples/svgtiny_display_x11.c \
-		$(OBJS) \
+		-o $@ $< $(OBJS) \
 		$(LDFLAGS) `pkg-config --cflags --libs cairo` -lX11
 
 clean:
