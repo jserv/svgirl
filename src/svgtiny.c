@@ -577,7 +577,7 @@ svgtiny_code svgtiny_parse_path(dom_element *path,
                 p[i++] = last_cubic_x = last_quad_x = last_x;
                 p[i++] = last_cubic_y = last_quad_y = last_y = y;
                 s += n;
-            } while (sscanf(s, "%f %n", &x, &n) == 1);
+            } while (sscanf(s, "%f %n", &y, &n) == 1);
 
             /* curveto (C, c) (6 arguments) */
         } else if (sscanf(s, " %1[Cc] %f %f %f %f %f %f %n", command, &x1, &y1,
