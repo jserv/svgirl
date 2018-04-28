@@ -2,9 +2,11 @@
 
 ## Overview
 
-SVGirl is a library for parsing SVG files into a simplified internal
-representation suitable for display or manipulation, forked from
-[libsvgtiny](http://www.netsurf-browser.org/projects/libsvgtiny/).
+SVGirl stands for SVG Instant Rendering Library, and it is a library
+for parsing SVG files into a simplified internal representation
+suitable for display or manipulation, derived from
+[libsvgtiny](http://www.netsurf-browser.org/projects/libsvgtiny/),
+with focus on minimal dependencies and embedded systems.
 
 The overall idea of the library is to take some SVG as input, and
 return a list of paths and texts which can be rendered easily. The
