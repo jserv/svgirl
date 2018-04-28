@@ -1,11 +1,11 @@
 /*
- * This file is an optional part of Libsvgtiny
+ * Copyright (C) 2016 John Chou <luckyjoou@gmail.com>
+ * Copyright (C) 2016 David Phillip Oster.
+ *
  * Licensed under the MIT License,
  *                http://opensource.org/licenses/mit-license.php
  *
- * It allows you to use libXml2 instead of dom as the xml parsing library.
- *
- * Copyright 2016 by David Phillip Oster
+ * ezxml wrapper for DOM manipulation.
  */
 
 #ifndef SVGTINY_XML2DOM_H
