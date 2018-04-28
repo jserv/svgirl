@@ -243,7 +243,7 @@ no_more_stops:
 
 float svgtiny_parse_gradient_offset(const char *s)
 {
-    int num_length = strspn(s, "0123456789+-.");
+    size_t num_length = strspn(s, "0123456789+-.");
     const char *unit = s + num_length;
     float n = atof((const char *) s);
 

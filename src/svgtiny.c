@@ -1322,7 +1322,7 @@ static float _svgtiny_parse_length(const char *s,
                                    int viewport_size,
                                    const struct svgtiny_parse_state state)
 {
-    int num_length = (int) strspn(s, "0123456789+-.");
+    size_t num_length = (int) strspn(s, "0123456789+-.");
     const char *unit = s + num_length;
     float n = atof((const char *) s);
     float font_size =
