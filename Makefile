@@ -3,6 +3,9 @@ CFLAGS := \
     -I./include \
     -I. -MMD
 
+LDFLAGS := \
+    -lm
+
 OBJS = \
     src/svgtiny_color.o \
     src/svgtiny.o \
@@ -13,19 +16,25 @@ OBJS = \
 
 deps := $(OBJS:%.o=%.d)
 
-all: bin/display_x11
+TESTS := \
+    tests/ezxml \
 
+tests/%: tests/%.o
+	$(CC) $(CFLAGS) -o $@ $^ $(OBJS) $(LDFLAGS)
+deps += $(TESTS:%=%.d)
+
+all: $(OBJS) $(TESTS)
+
+EXAMPLES := \
+	bin/display_x11
 bin/display_x11 : examples/svgtiny_display_x11.c $(OBJS)
 	mkdir -p bin
 	$(CC) $(CFLAGS) -g \
 		-o bin/display_x11 examples/svgtiny_display_x11.c \
 		$(OBJS) \
-		`pkg-config --cflags --libs cairo` -lm -lX11
-
-test: bin/display_x11
-	bin/display_x11 img/apple.svg
+		$(LDFLAGS) `pkg-config --cflags --libs cairo` -lX11
 
 clean:
-	$(RM) bin/display_x11 $(OBJS) $(deps)
+	$(RM) $(EXAMPLES) $(TESTS) $(OBJS) $(deps)
 
 -include $(deps)
