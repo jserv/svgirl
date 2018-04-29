@@ -39,6 +39,23 @@ represent the gradient.
 
 The style attribute is supported.
 
+## Building SVGirl
+
+Compile all source along with test programs:
+```shell
+make
+```
+
+Launch test suite:
+```shell
+make check
+```
+
+Build reference SVG viewer on X Window System:
+```
+make bin/display_x11
+```
+
 ## Using SVGirl
 
 The interface is in the header `svgtiny.h`
@@ -114,4 +131,4 @@ To free memory used by a diagram, use `svgtiny_free()`:
 svgtiny_free(diagram);
 ```
 
-For an example, see `example/svgtiny_display_x11.c`.
+For an example, see `examples/svgtiny_display_x11.c`.
