@@ -102,9 +102,8 @@ A path always starts with a MOVE.
 
 The fill and stroke attributes give the colors of the path, or
 `svgtiny_TRANSPARENT` if the path is not filled or stroked. Colors are
-in 0xRRGGBB format (except when compiled for RISC OS). The macros
-`svgtiny_RED`, `svgtiny_GREEN`, and `svgtiny_BLUE` can be used to extract
-the components.
+in 0xRRGGBB format (depending on endianness). The macros `svgtiny_RED`,
+`svgtiny_GREEN`, and `svgtiny_BLUE` can be used to extract the components.
 
 The width of the path is in `stroke_width`.
 

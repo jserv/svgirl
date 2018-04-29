@@ -10,19 +10,21 @@
 
 // To get the definition of size_t
 #include <stdlib.h>
-
+#include <endian.h>
 
 typedef unsigned int svgtiny_colour;
-#ifdef __riscos__
+#if __BYTE_ORDER == __BIG_ENDIAN
 #define svgtiny_RGB(r, g, b) (0xff << 24 | (b) << 16 | (g) << 8 | (r))
 #define svgtiny_RED(c) ((c) &0xff)
 #define svgtiny_GREEN(c) (((c) >> 8) & 0xff)
 #define svgtiny_BLUE(c) (((c) >> 16) & 0xff)
-#else
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define svgtiny_RGB(r, g, b) (0xff << 24 | (r) << 16 | (g) << 8 | (b))
 #define svgtiny_RED(c) (((c) >> 16) & 0xff)
 #define svgtiny_GREEN(c) (((c) >> 8) & 0xff)
 #define svgtiny_BLUE(c) ((c) &0xff)
+#else
+#error "unable to determine endianess!"
 #endif
 #define svgtiny_ALPHA(c) (((c) >> 24) & 0xff)
 
