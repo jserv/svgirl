@@ -1,7 +1,10 @@
-build-*
 *~
 *out*
 tags
 *.o
 *.d
 bin
+tests/log
+tests/decode_svg
+tests/ezxml
+tests/svgtiny

@@ -18,7 +18,8 @@ deps := $(OBJS:%.o=%.d)
 
 TESTS := \
     tests/ezxml \
-    tests/svgtiny
+    tests/svgtiny \
+    tests/decode_svg
 
 tests/%: tests/%.o
 	$(CC) $(CFLAGS) -o $@ $^ $(OBJS) $(LDFLAGS)
@@ -34,7 +35,10 @@ bin/display_x11: examples/svgtiny_display_x11.c $(OBJS)
 		-o $@ $< $(OBJS) \
 		$(LDFLAGS) `pkg-config --cflags --libs cairo` -lX11
 
+check: $(OBJS) $(TESTS)
+	@tests/runner.sh $(PWD) || echo "Check tests/log for details"
+
 clean:
-	$(RM) $(EXAMPLES) $(TESTS) $(OBJS) $(deps)
+	$(RM) $(EXAMPLES) $(TESTS) $(TESTS:%=%.o) tests/log $(OBJS) $(deps)
 
 -include $(deps)
