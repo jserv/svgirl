@@ -431,7 +431,10 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
             for (i = 0; n && root->attr[i] && strcmp(n, root->attr[i][0]); i++)
                 ;
 
-            while (*(n = ++s + strspn(s, EZXML_WS)) && *n != '>') {
+            while (*n != '>') {
+                ++s;
+                if (*(n = s + strspn(s, EZXML_WS)) == 0)
+                    break;
                 if (*(s = n + strcspn(n, EZXML_WS)))
                     *s = '\0';  // attr name
                 else {
