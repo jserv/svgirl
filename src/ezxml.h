@@ -35,10 +35,9 @@
 extern "C" {
 #endif
 
-#define EZXML_BUFSIZE 1024  // size of internal memory buffers
-#define EZXML_NAMEM 0x80    // name is malloced
-#define EZXML_TXTM 0x40     // txt is malloced
-#define EZXML_DUP 0x20      // attribute name and value are strduped
+#define EZXML_NAMEM 0x80  // name is malloced
+#define EZXML_TXTM 0x40   // txt is malloced
+#define EZXML_DUP 0x20    // attribute name and value are strduped
 
 /*
  * The different element types carried by an XML tree.
@@ -94,19 +93,6 @@ struct ezxml {
 // and decoding ampersand sequences. If you don't want this, copy the data and
 // pass in the copy. Returns NULL on failure.
 ezxml_t ezxml_parse_str(char *s, size_t len);
-
-// A wrapper for ezxml_parse_str() that accepts a file descriptor. First
-// attempts to mem map the file. Failing that, reads the file into memory.
-// Returns NULL on failure.
-ezxml_t ezxml_parse_fd(int fd);
-
-// a wrapper for ezxml_parse_fd() that accepts a file name
-ezxml_t ezxml_parse_file(const char *file);
-
-// Wrapper for ezxml_parse_str() that accepts a file stream. Reads the entire
-// stream into memory and then parses it. For xml files, use ezxml_parse_file()
-// or ezxml_parse_fd()
-ezxml_t ezxml_parse_fp(FILE *fp);
 
 // returns the first child tag (one level deeper) with the given name or NULL
 // if not found
