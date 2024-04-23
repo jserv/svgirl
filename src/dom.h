@@ -11,8 +11,8 @@
 #ifndef SVGTINY_XML2DOM_H
 #define SVGTINY_XML2DOM_H
 
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "ezxml.h"
 
 typedef struct dom_node {

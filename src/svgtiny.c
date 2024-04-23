@@ -2211,9 +2211,9 @@ svgtiny_code svgtiny_add_path(float *p,
 
 struct svgtiny_shape *svgtiny_add_shape(struct svgtiny_parse_state *state)
 {
-    struct svgtiny_shape *shape = realloc(
-        state->diagram->shape,
-        (state->diagram->shape_count + 1) * sizeof(state->diagram->shape[0]));
+    struct svgtiny_shape *shape =
+        realloc(state->diagram->shape, (state->diagram->shape_count + 1) *
+                                           sizeof(state->diagram->shape[0]));
     if (!shape)
         return 0;
     state->diagram->shape = shape;
