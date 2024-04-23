@@ -166,8 +166,8 @@ dom_exception dom_node_get_node_name(dom_node *node, dom_string **outString)
 {
     ezxml_t n = node->node;
     dom_exception errCode = DOM_NO_ERR;
-    errCode = dom_string_create_interned(
-        n->name, strlen((const char *) n->name), outString);
+    errCode = dom_string_create_interned((const uint8_t *) n->name,
+                                         strlen(n->name), outString);
     return errCode;
 }
 
