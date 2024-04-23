@@ -19,11 +19,20 @@
 #include "svgtiny.h"
 #include "svgtiny_internal.h"
 
+#define TAU 6.28318530717958647692
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+
 #define KAPPA 0.5522847498
+
+#define degToRad(angleInDegrees) ((angleInDegrees) *M_PI / 180.0)
+#define radToDeg(angleInRadians) ((angleInRadians) *180.0 / M_PI)
 
 static svgtiny_code svgtiny_parse_svg(dom_element *svg,
                                       struct svgtiny_parse_state state);
@@ -63,6 +72,451 @@ static void _svgtiny_parse_color(const char *s,
                                  svgtiny_colour *c,
                                  struct svgtiny_parse_state_gradient *grad,
                                  struct svgtiny_parse_state *state);
+
+/**
+ * rotate midpoint vector
+ */
+static void rotate_midpoint_vector(float ax,
+                                   float ay,
+                                   float bx,
+                                   float by,
+                                   double radangle,
+                                   double *x_out,
+                                   double *y_out)
+{
+    double dx2;      /* midpoint x coordinate */
+    double dy2;      /* midpoint y coordinate */
+    double cosangle; /* cosine of rotation angle */
+    double sinangle; /* sine of rotation angle */
+
+    /* compute the sin and cos of the angle */
+    cosangle = cos(radangle);
+    sinangle = sin(radangle);
+
+    /* compute the midpoint between start and end points */
+    dx2 = (ax - bx) / 2.0;
+    dy2 = (ay - by) / 2.0;
+
+    /* rotate vector to remove angle */
+    *x_out = ((cosangle * dx2) + (sinangle * dy2));
+    *y_out = ((-sinangle * dx2) + (cosangle * dy2));
+}
+
+
+/**
+ * ensure the arc radii are large enough and scale as appropriate
+ *
+ * the radii need to be large enough if they are not they must be
+ *  adjusted. This allows for elimination of differences between
+ *  implementations especialy with rounding.
+ */
+static void ensure_radii_scale(double x1_sq,
+                               double y1_sq,
+                               float *rx,
+                               float *ry,
+                               double *rx_sq,
+                               double *ry_sq)
+{
+    double radiisum;
+    double radiiscale;
+
+    /* set radii square values */
+    (*rx_sq) = (*rx) * (*rx);
+    (*ry_sq) = (*ry) * (*ry);
+
+    radiisum = (x1_sq / (*rx_sq)) + (y1_sq / (*ry_sq));
+    if (radiisum > 0.99999) {
+        /* need to scale radii */
+        radiiscale = sqrt(radiisum) * 1.00001;
+        *rx = (float) (radiiscale * (*rx));
+        *ry = (float) (radiiscale * (*ry));
+        /* update squares too */
+        (*rx_sq) = (*rx) * (*rx);
+        (*ry_sq) = (*ry) * (*ry);
+    }
+}
+
+
+/**
+ * compute the transformed centre point
+ */
+static void compute_transformed_centre_point(double sign,
+                                             float rx,
+                                             float ry,
+                                             double rx_sq,
+                                             double ry_sq,
+                                             double x1,
+                                             double y1,
+                                             double x1_sq,
+                                             double y1_sq,
+                                             double *cx1,
+                                             double *cy1)
+{
+    double sq;
+    double coef;
+    sq = ((rx_sq * ry_sq) - (rx_sq * y1_sq) - (ry_sq * x1_sq)) /
+         ((rx_sq * y1_sq) + (ry_sq * x1_sq));
+    sq = (sq < 0) ? 0 : sq;
+
+    coef = (sign * sqrt(sq));
+
+    *cx1 = coef * ((rx * y1) / ry);
+    *cy1 = coef * -((ry * x1) / rx);
+}
+
+
+/**
+ * compute untransformed centre point
+ *
+ * \param ax The first point x coordinate
+ * \param ay The first point y coordinate
+ * \param bx The second point x coordinate
+ * \param ay The second point y coordinate
+ */
+static void compute_centre_point(float ax,
+                                 float ay,
+                                 float bx,
+                                 float by,
+                                 double cx1,
+                                 double cy1,
+                                 double radangle,
+                                 double *x_out,
+                                 double *y_out)
+{
+    double sx2;
+    double sy2;
+    double cosangle; /* cosine of rotation angle */
+    double sinangle; /* sine of rotation angle */
+
+    /* compute the sin and cos of the angle */
+    cosangle = cos(radangle);
+    sinangle = sin(radangle);
+
+    sx2 = (ax + bx) / 2.0;
+    sy2 = (ay + by) / 2.0;
+
+    *x_out = sx2 + (cosangle * cx1 - sinangle * cy1);
+    *y_out = sy2 + (sinangle * cx1 + cosangle * cy1);
+}
+
+
+/**
+ * compute the angle start and extent
+ */
+static void compute_angle_start_extent(float rx,
+                                       float ry,
+                                       double x1,
+                                       double y1,
+                                       double cx1,
+                                       double cy1,
+                                       double *start,
+                                       double *extent)
+{
+    double sign;
+    double ux;
+    double uy;
+    double vx;
+    double vy;
+    double p, n;
+    double actmp;
+
+    /*
+     * Angle betwen two vectors is +/- acos( u.v / len(u) * len(v))
+     * Where:
+     *  '.' is the dot product.
+     *  +/- is calculated from the sign of the cross product (u x v)
+     */
+
+    ux = (x1 - cx1) / rx;
+    uy = (y1 - cy1) / ry;
+    vx = (-x1 - cx1) / rx;
+    vy = (-y1 - cy1) / ry;
+
+    /* compute the start angle */
+    /* The angle between (ux, uy) and the 0 angle */
+
+    /* len(u) * len(1,0) == len(u) */
+    n = sqrt((ux * ux) + (uy * uy));
+    /* u.v == (ux,uy).(1,0) == (1 * ux) + (0 * uy) == ux */
+    p = ux;
+    /* u x v == (1 * uy - ux * 0) == uy */
+    sign = (uy < 0) ? -1.0 : 1.0;
+    /* (p >= n) so safe */
+    *start = sign * acos(p / n);
+
+    /* compute the extent angle */
+    n = sqrt(((ux * ux) + (uy * uy)) * ((vx * vx) + (vy * vy)));
+    p = (ux * vx) + (uy * vy);
+    sign = ((ux * vy) - (uy * vx) < 0) ? -1.0f : 1.0f;
+
+    /* arc cos must operate between -1 and 1 */
+    actmp = p / n;
+    if (actmp < -1.0) {
+        *extent = sign * M_PI;
+    } else if (actmp > 1.0) {
+        *extent = 0;
+    } else {
+        *extent = sign * acos(actmp);
+    }
+}
+
+
+/**
+ * converts a circle centered unit circle arc to a series of bezier curves
+ *
+ * Each bezier is stored as six values of three pairs of coordinates
+ *
+ * The beziers are stored without their start point as that is assumed
+ *   to be the preceding elements end point.
+ *
+ * \param start The start angle of the arc (in radians)
+ * \param extent The size of the arc (in radians)
+ * \param bzpt The array to store the bezier values in
+ * \return The number of bezier segments output (max 4)
+ */
+static int circle_arc_to_bezier(double start, double extent, double *bzpt)
+{
+    int bzsegments;
+    double increment;
+    double controllen;
+    int pos = 0;
+    int segment;
+    double angle;
+    double dx, dy;
+
+    bzsegments = (int) ceil(fabs(extent) / M_PI_2);
+    increment = extent / bzsegments;
+    controllen =
+        4.0 / 3.0 * sin(increment / 2.0) / (1.0 + cos(increment / 2.0));
+
+    for (segment = 0; segment < bzsegments; segment++) {
+        /* first control point */
+        angle = start + (segment * increment);
+        dx = cos(angle);
+        dy = sin(angle);
+        bzpt[pos++] = dx - controllen * dy;
+        bzpt[pos++] = dy + controllen * dx;
+        /* second control point */
+        angle += increment;
+        dx = cos(angle);
+        dy = sin(angle);
+        bzpt[pos++] = dx + controllen * dy;
+        bzpt[pos++] = dy - controllen * dx;
+        /* endpoint */
+        bzpt[pos++] = dx;
+        bzpt[pos++] = dy;
+    }
+    return bzsegments;
+}
+
+
+/**
+ * transform coordinate list
+ *
+ * perform a scale, rotate and translate on list of coordinates
+ *
+ * scale(rx,ry)
+ * rotate(an)
+ * translate (cx, cy)
+ *
+ * homogeneous transforms
+ *
+ * scaling
+ *     |   rx        0        0   |
+ * S = |    0       ry        0   |
+ *     |    0        0        1   |
+ *
+ * rotate
+ *     | cos(an)  -sin(an)    0   |
+ * R = | sin(an)   cos(an)    0   |
+ *     |    0        0        1   |
+ *
+ * {{cos(a), -sin(a) 0}, {sin(a), cos(a),0}, {0,0,1}}
+ *
+ * translate
+ *     |    1        0       cx   |
+ * T = |    0        1       cy   |
+ *     |    0        0        1   |
+ *
+ * note order is significat here and the combined matrix is
+ * M = T.R.S
+ *
+ *       | cos(an)  -sin(an)    cx   |
+ * T.R = | sin(an)   cos(an)    cy   |
+ *       |    0        0        1    |
+ *
+ *         | rx * cos(an)  ry * -sin(an)   cx  |
+ * T.R.S = | rx * sin(an)  ry * cos(an)    cy  |
+ *         | 0             0               1   |
+ *
+ * {{Cos[a], -Sin[a], c}, {Sin[a], Cos[a], d}, {0, 0, 1}} . {{r, 0, 0}, {0, s,
+ * 0}, {0, 0, 1}}
+ *
+ * Each point
+ *     | x1 |
+ * P = | y1 |
+ *     |  1 |
+ *
+ * output
+ * | x2 |
+ * | y2 | = M . P
+ * | 1  |
+ *
+ * x2 = cx + (rx * x1 * cos(a)) + (ry * y1 * -1 * sin(a))
+ * y2 = cy + (ry * y1 * cos(a)) + (rx * x1 * sin(a))
+ *
+ *
+ * \param rx X scaling to apply
+ * \param ry Y scaling to apply
+ * \param radangle rotation to apply (in radians)
+ * \param cx X translation to apply
+ * \param cy Y translation to apply
+ * \param points The size of the bzpoints array
+ * \param bzpoints an array of x,y values to apply the transform to
+ */
+static void scale_rotate_translate_points(double rx,
+                                          double ry,
+                                          double radangle,
+                                          double cx,
+                                          double cy,
+                                          int pntsize,
+                                          double *points)
+{
+    int pnt;
+    double cosangle; /* cosine of rotation angle */
+    double sinangle; /* sine of rotation angle */
+    double rxcosangle, rxsinangle, rycosangle, rynsinangle;
+    double x2, y2;
+
+    /* compute the sin and cos of the angle */
+    cosangle = cos(radangle);
+    sinangle = sin(radangle);
+
+    rxcosangle = rx * cosangle;
+    rxsinangle = rx * sinangle;
+    rycosangle = ry * cosangle;
+    rynsinangle = ry * -1 * sinangle;
+
+    for (pnt = 0; pnt < pntsize; pnt += 2) {
+        x2 = cx + (points[pnt] * rxcosangle) + (points[pnt + 1] * rynsinangle);
+        y2 = cy + (points[pnt + 1] * rycosangle) + (points[pnt] * rxsinangle);
+        points[pnt] = x2;
+        points[pnt + 1] = y2;
+    }
+}
+
+
+/**
+ * convert an svg path arc to a bezier curve
+ *
+ * This function perfoms a transform on the nine arc parameters
+ *  (coordinate pairs for start and end together with the radii of the
+ *  elipse, the rotation angle and which of the four arcs to draw)
+ *  which generates the parameters (coordinate pairs for start,
+ *  end and their control points) for a set of up to four bezier curves.
+ *
+ * Obviously the start and end coordinates are not altered between
+ * representations so the aim is to calculate the coordinate pairs for
+ * the bezier control points.
+ *
+ * \param bzpoints the array to fill with bezier curves
+ * \return the number of bezier segments generated or -1 for a line
+ */
+static int svgarc_to_bezier(float start_x,
+                            float start_y,
+                            float end_x,
+                            float end_y,
+                            float rx,
+                            float ry,
+                            float angle,
+                            bool largearc,
+                            bool sweep,
+                            double *bzpoints)
+{
+    double radangle;     /* normalised elipsis rotation angle in radians */
+    double rx_sq;        /* x radius squared */
+    double ry_sq;        /* y radius squared */
+    double x1, y1;       /* rotated midpoint vector */
+    double x1_sq, y1_sq; /* x1 vector squared */
+    double cx1, cy1;     /* transformed circle center */
+    double cx, cy;       /* circle center */
+    double start, extent;
+    int bzsegments;
+
+    if ((start_x == end_x) && (start_y == end_y)) {
+        /*
+         * if the start and end coordinates are the same the
+         *  svg spec says this is equivalent to having no segment
+         *  at all
+         */
+        return 0;
+    }
+
+    if ((rx == 0) || (ry == 0)) {
+        /*
+         * if either radii is zero the specified behaviour is a line
+         */
+        return -1;
+    }
+
+    /* obtain the absolute values of the radii */
+    rx = fabsf(rx);
+    ry = fabsf(ry);
+
+    /* convert normalised angle to radians */
+    radangle = degToRad(fmod(angle, 360.0));
+
+    /* step 1 */
+    /* x1,x2 is the midpoint vector rotated to remove the arc angle */
+    rotate_midpoint_vector(start_x, start_y, end_x, end_y, radangle, &x1, &y1);
+
+    /* step 2 */
+    /* get squared x1 values */
+    x1_sq = x1 * x1;
+    y1_sq = y1 * y1;
+
+    /* ensure radii are correctly scaled  */
+    ensure_radii_scale(x1_sq, y1_sq, &rx, &ry, &rx_sq, &ry_sq);
+
+    /* compute the transformed centre point */
+    compute_transformed_centre_point(largearc == sweep ? -1 : 1, rx, ry, rx_sq,
+                                     ry_sq, x1, y1, x1_sq, y1_sq, &cx1, &cy1);
+
+    /* step 3 */
+    /* get the untransformed centre point */
+    compute_centre_point(start_x, start_y, end_x, end_y, cx1, cy1, radangle,
+                         &cx, &cy);
+
+    /* step 4 */
+    /* compute anglestart and extent */
+    compute_angle_start_extent(rx, ry, x1, y1, cx1, cy1, &start, &extent);
+
+    /* extent of 0 is a straight line */
+    if (extent == 0) {
+        return -1;
+    }
+
+    /* take account of sweep */
+    if (!sweep && extent > 0) {
+        extent -= TAU;
+    } else if (sweep && extent < 0) {
+        extent += TAU;
+    }
+
+    /* normalise start and extent */
+    extent = fmod(extent, TAU);
+    start = fmod(start, TAU);
+
+    /* convert the arc to unit circle bezier curves */
+    bzsegments = circle_arc_to_bezier(start, extent, bzpoints);
+
+    /* transform the bezier curves */
+    scale_rotate_translate_points(rx, ry, radangle, cx, cy, bzsegments * 6,
+                                  bzpoints);
+
+    return bzsegments;
+}
+
 
 /**
  * Call this to ref the strings in a gradient state.
@@ -684,15 +1138,43 @@ svgtiny_code svgtiny_parse_path(dom_element *path,
                           &ry, &rotation, &large_arc, &sweep, &x, &y,
                           &n) == 8) {
             do {
-                ALLOC_PATH_ELEMENTS(3);
+                int bzsegments;
+                double bzpoints[6 * 4]; /* allow for up to four bezier segments
+                                           per arc */
 
-                p[i++] = svgtiny_PATH_LINE;
                 if (*command == 'a') {
                     x += last_x;
                     y += last_y;
                 }
-                p[i++] = last_cubic_x = last_quad_x = last_x = x;
-                p[i++] = last_cubic_y = last_quad_y = last_y = y;
+
+                bzsegments =
+                    svgarc_to_bezier(last_x, last_y, x, y, rx, ry, rotation,
+                                     large_arc, sweep, bzpoints);
+                if (bzsegments == -1) {
+                    /* draw a line */
+                    ALLOC_PATH_ELEMENTS(3);
+                    p[i++] = svgtiny_PATH_LINE;
+                    p[i++] = x;
+                    p[i++] = y;
+                } else if (bzsegments > 0) {
+                    int bzpnt;
+                    ALLOC_PATH_ELEMENTS((unsigned int) bzsegments * 7);
+                    for (bzpnt = 0; bzpnt < (bzsegments * 6); bzpnt += 6) {
+                        p[i++] = svgtiny_PATH_BEZIER;
+                        p[i++] = bzpoints[bzpnt];
+                        p[i++] = bzpoints[bzpnt + 1];
+                        p[i++] = bzpoints[bzpnt + 2];
+                        p[i++] = bzpoints[bzpnt + 3];
+                        p[i++] = bzpoints[bzpnt + 4];
+                        p[i++] = bzpoints[bzpnt + 5];
+                    }
+                }
+                if (bzsegments != 0) {
+                    last_cubic_x = last_quad_x = last_x = p[i - 2];
+                    last_cubic_y = last_quad_y = last_y = p[i - 1];
+                }
+
+
                 s += n;
             } while (sscanf(s, "%f %f %f %f %f %f %f %n", &rx, &ry, &rotation,
                             &large_arc, &sweep, &x, &y, &n) == 7);
@@ -1190,8 +1672,8 @@ svgtiny_code svgtiny_parse_text(dom_element *text,
 
     px = state.ctm.a * x + state.ctm.c * y + state.ctm.e;
     py = state.ctm.b * x + state.ctm.d * y + state.ctm.f;
-    /* 	state.ctm.e = px - state.origin_x; */
-    /* 	state.ctm.f = py - state.origin_y; */
+    /*	state.ctm.e = px - state.origin_x; */
+    /*	state.ctm.f = py - state.origin_y; */
 
     /*struct css_style style = state.style;
     style.font_size.value.length.value *= state.ctm.a;*/
