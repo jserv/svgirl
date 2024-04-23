@@ -6,10 +6,10 @@
  */
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include "svgtiny.h"
 
 static void write_mvg(FILE *fh, float scale, struct svgtiny_diagram *diagram)

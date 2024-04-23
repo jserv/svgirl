@@ -5,12 +5,12 @@
  * Copyright 2008 James Bursa <james@semichrome.net>
  */
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include "svgtiny.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #define INPUT_FILE "tests/apple.svg"
 

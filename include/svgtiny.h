@@ -9,8 +9,8 @@
 #define SVGTINY_H
 
 // To get the definition of size_t
-#include <stdlib.h>
 #include <endian.h>
+#include <stdlib.h>
 
 typedef unsigned int svgtiny_colour;
 #if __BYTE_ORDER == __BIG_ENDIAN

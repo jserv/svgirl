@@ -28,15 +28,17 @@ ezxml_t ezxml_parse_fd(int fd)
     l = (st.st_size + sysconf(_SC_PAGESIZE) - 1) & ~(sysconf(_SC_PAGESIZE) - 1);
     if ((m = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) !=
         MAP_FAILED) {
-        posix_madvise(m, l, POSIX_MADV_SEQUENTIAL);  // optimize for sequential access
+        posix_madvise(m, l,
+                      POSIX_MADV_SEQUENTIAL);  // optimize for sequential access
         root = (ezxml_root_t) ezxml_parse_str(m, st.st_size);
         if (!root) {
             munmap(m, l);
             return NULL;
         }
-        posix_madvise(m, root->len = l, POSIX_MADV_NORMAL);  // put it back to normal
-    } else {  // mmap failed, read file into memory
-#endif        // EZXML_NOMMAP
+        posix_madvise(m, root->len = l,
+                      POSIX_MADV_NORMAL);  // put it back to normal
+    } else {                               // mmap failed, read file into memory
+#endif                                     // EZXML_NOMMAP
         l = read(fd, m = malloc(st.st_size), st.st_size);
         root = (ezxml_root_t) ezxml_parse_str(m, l);
         if (!root) {
