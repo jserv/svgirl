@@ -992,7 +992,7 @@ void ezxml_free(ezxml_t xml)
         if (root->pi[0])
             free(root->pi);  // free processing instructions
 
-        if (root->len == -1)
+        if (root->len == (unsigned int) -1)
             free(root->m);  // malloced xml data
 #ifndef EZXML_NOMMAP
         else if (root->len)
