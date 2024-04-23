@@ -8,3 +8,4 @@ tests/log
 tests/decode_svg
 tests/ezxml
 tests/svgtiny
+src/svgtiny_colors.c

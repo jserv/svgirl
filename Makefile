@@ -7,7 +7,6 @@ LDFLAGS := \
     -lm
 
 OBJS = \
-    src/svgtiny_color.o \
     src/svgtiny.o \
     src/svgtiny_gradient.o \
     src/svgtiny_list.o \
@@ -24,6 +23,12 @@ TESTS := \
 tests/%: tests/%.o
 	$(CC) $(CFLAGS) -o $@ $^ $(OBJS) $(LDFLAGS)
 deps += $(TESTS:%=%.d)
+
+src/svgtiny.c: src/svgtiny_colors.c
+src/svgtiny_colors.c: src/colors.gperf
+	gperf --output-file=$@ $<
+
+.DEFAULT_GOAL :=
 
 all: $(OBJS) $(TESTS)
 
