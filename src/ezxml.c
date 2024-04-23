@@ -22,13 +22,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
 #include <ctype.h>
-#include <unistd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 #ifndef EZXML_NOMMAP
 #include <sys/mman.h>
 #endif  // EZXML_NOMMAP
@@ -202,7 +202,13 @@ char *ezxml_decode(char *s, char **ent, char t)
                 *(s++) = c;  // US-ASCII subset
             else {           // multi-byte UTF-8 sequence
                 for (b = 0, d = c; d; d /= 2)
-                    b++;          // number of bits in c
+                    b++;  // number of bits in c
+                // UTF-8 can ecode max 36 bits (standard says 21) - noop on 32
+                // bit.
+                if (b > 36) {
+                    s++;
+                    continue;
+                }
                 b = (b - 2) / 5;  // number of bytes in payload
                 *(s++) = (0xFF << (7 - b)) | (c >> (6 * b));  // head
                 while (b)
@@ -365,6 +371,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
 {
     char q, *c, *t, *n = NULL, *v, **ent, **pe;
     int i, j;
+    size_t n_len, n_off;
 
     pe = memcpy(malloc(sizeof(EZXML_NIL)), EZXML_NIL, sizeof(EZXML_NIL));
 
@@ -377,7 +384,13 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
         else if (!strncmp(s, "<!ENTITY", 8)) {     // parse entity definitions
             c = s += strspn(s + 8, EZXML_WS) + 8;  // skip white space separator
             n = s + strspn(s, EZXML_WS "%");       // find name
-            *(s = n + strcspn(n, EZXML_WS)) = ';';  // append ; to name
+            n_len = strlen(n);
+            n_off = strcspn(n, EZXML_WS);
+            if (n_off >= n_len) {
+                ezxml_err(root, NULL, "write past buffer (<!ENTITY)");
+                break;
+            }
+            *(s = n + n_off) = ';';  // append ; to name
 
             v = s + strspn(s + 1, EZXML_WS) + 1;     // find value
             if ((q = *(v++)) != '"' && q != '\'') {  // skip externals
@@ -415,7 +428,7 @@ short ezxml_internal_dtd(ezxml_root_t root, char *s, size_t len)
                 continue;
             else
                 *s = '\0';  // null terminate tag name
-            for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++)
+            for (i = 0; n && root->attr[i] && strcmp(n, root->attr[i][0]); i++)
                 ;
 
             while (*(n = ++s + strspn(s, EZXML_WS)) && *n != '>') {
@@ -554,6 +567,8 @@ ezxml_t ezxml_parse_str(char *s, size_t len)
     char q, e, *d, **attr, **a = NULL;  // initialize a to avoid compile warning
     int l, i, j;
 
+    if (!root)
+        return NULL;
     root->m = s;
     if (!len)
         return ezxml_err(root, NULL, "root tag missing");
@@ -665,7 +680,7 @@ ezxml_t ezxml_parse_str(char *s, size_t len)
                                *(s + strspn(s + 1, EZXML_WS) + 1) != '>')));
                  l = (*s == '[') ? 1 : l)
                 s += strcspn(s + 1, "[]>") + 1;
-            if (!*s && e != '>')
+            if (!*s)
                 return ezxml_err(root, d, "unclosed <!DOCTYPE");
             d = (l) ? strchr(d, '[') + 1 : d;
             if (l && !ezxml_internal_dtd(root, d, s++ - d))
@@ -723,7 +738,10 @@ ezxml_t ezxml_parse_fp(FILE *fp)
 
     if (!s)
         return NULL;
-    root = (ezxml_root_t) ezxml_parse_str(s, len);
+    if (!(root = (ezxml_root_t) ezxml_parse_str(s, len))) {
+        free(s);
+        return NULL;
+    }
     root->len = -1;  // so we know to free s in ezxml_free()
     return &root->xml;
 }
@@ -748,11 +766,19 @@ ezxml_t ezxml_parse_fd(int fd)
         MAP_FAILED) {
         madvise(m, l, MADV_SEQUENTIAL);  // optimize for sequential access
         root = (ezxml_root_t) ezxml_parse_str(m, st.st_size);
+        if (!root) {
+            munmap(m, l);
+            return NULL;
+        }
         madvise(m, root->len = l, MADV_NORMAL);  // put it back to normal
     } else {  // mmap failed, read file into memory
 #endif        // EZXML_NOMMAP
         l = read(fd, m = malloc(st.st_size), st.st_size);
         root = (ezxml_root_t) ezxml_parse_str(m, l);
+        if (!root) {
+            free(m);
+            return NULL;
+        };
         root->len = -1;  // so we know to free s in ezxml_free()
 #ifndef EZXML_NOMMAP
     }
@@ -885,9 +911,12 @@ char *ezxml_toxml(ezxml_t xml)
     ezxml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
     ezxml_root_t root = (ezxml_root_t) xml;
     size_t len = 0, max = EZXML_BUFSIZE;
-    char *s = strcpy(malloc(max), ""), *t, *n;
+    char *s = malloc(max), *t, *n;
     int i, j, k;
 
+    if (!s)
+        return (NULL);
+    s = strcpy(s, "");
     if (!xml || !xml->name)
         return realloc(s, len + 1);
     while (root->xml.parent)
@@ -991,12 +1020,19 @@ ezxml_t ezxml_new(const char *name)
 {
     static char *ent[] = {"lt;",   "&#60;", "gt;",  "&#62;", "quot;", "&#34;",
                           "apos;", "&#39;", "amp;", "&#38;", NULL};
-    ezxml_root_t root = (ezxml_root_t) memset(malloc(sizeof(struct ezxml_root)),
-                                              '\0', sizeof(struct ezxml_root));
+    ezxml_root_t root;
+    char **p_ent;
+    if (!(root = malloc(sizeof(struct ezxml_root))))
+        return NULL;
+    if (!(p_ent = malloc(sizeof(ent)))) {
+        free(root);
+        return NULL;
+    }
+    root = (ezxml_root_t) memset(root, '\0', sizeof(struct ezxml_root));
     root->xml.name = (char *) name;
     root->cur = &root->xml;
     strcpy(root->err, root->xml.txt = "");
-    root->ent = memcpy(malloc(sizeof(ent)), ent, sizeof(ent));
+    root->ent = memcpy(p_ent, ent, sizeof(ent));
     root->attr = root->pi = (char ***) (root->xml.attr = EZXML_NIL);
     return &root->xml;
 }

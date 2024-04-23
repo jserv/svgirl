@@ -26,10 +26,10 @@
 #ifndef _EZXML_H
 #define _EZXML_H
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
