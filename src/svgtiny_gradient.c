@@ -335,8 +335,10 @@ svgtiny_code svgtiny_add_path_linear_gradient(float *p,
     gradient_norm_squared =
         gradient_dx * gradient_dx + gradient_dy * gradient_dy;
     pts = svgtiny_list_create(sizeof(struct grad_point));
-    if (!pts)
+    if (!pts) {
+        free(p);
         return svgtiny_OUT_OF_MEMORY;
+    }
     for (j = 0; j != n;) {
         int segment_type = (int) p[j];
         struct grad_point *point;
@@ -361,6 +363,7 @@ svgtiny_code svgtiny_add_path_linear_gradient(float *p,
              gradient_norm_squared;
         point = svgtiny_list_push(pts);
         if (!point) {
+            free(p);
             svgtiny_list_free(pts);
             return svgtiny_OUT_OF_MEMORY;
         }
@@ -430,6 +433,7 @@ svgtiny_code svgtiny_add_path_linear_gradient(float *p,
                 gradient_norm_squared;
             point = svgtiny_list_push(pts);
             if (!point) {
+                free(p);
                 svgtiny_list_free(pts);
                 return svgtiny_OUT_OF_MEMORY;
             }
@@ -450,6 +454,7 @@ svgtiny_code svgtiny_add_path_linear_gradient(float *p,
     /* There must be at least a single point for the gradient */
     if (svgtiny_list_size(pts) == 0) {
         svgtiny_list_free(pts);
+        free(p);
         return svgtiny_OK;
     }
 

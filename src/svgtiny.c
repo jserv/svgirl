@@ -465,6 +465,7 @@ svgtiny_code svgtiny_parse_path(dom_element *path,
     /* empty path is permitted it just disables the path */
     palloc = dom_string_byte_length(path_d_str);
     if (palloc == 0) {
+        dom_string_unref(path_d_str);
         svgtiny_cleanup_state_local(&state);
         return svgtiny_OK;
     }
@@ -697,7 +698,6 @@ svgtiny_code svgtiny_parse_path(dom_element *path,
                             &large_arc, &sweep, &x, &y, &n) == 7);
 
         } else {
-            fprintf(stderr, "parse failed at \"%s\"\n", s);
             break;
         }
     }
