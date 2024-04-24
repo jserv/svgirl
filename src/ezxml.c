@@ -24,6 +24,7 @@
 
 #include <ctype.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #ifndef EZXML_NOMMAP
@@ -32,6 +33,26 @@
 
 #include "ezxml.h"
 #include "ezxml_internal.h"
+
+/* stack for convert recursion to iteration */
+#define EZXML_STACK_DEFAULT_SIZE 4096
+#define EZXML_STACK_ADD_SIZE 1024
+
+typedef struct {
+    ezxml_t *stack;
+    uintptr_t *find_addr;
+    size_t count;
+    size_t alloc_size;
+} ezxml_stack_t;
+
+static void ezxml_stack_init(ezxml_stack_t *ezstk);
+static void ezxml_stack_free(ezxml_stack_t *ezstk);
+
+static int ezxml_stack_push(ezxml_stack_t *ezstk, ezxml_t node);
+static void ezxml_stack_remove(ezxml_stack_t *ezstk);
+
+static ezxml_t ezxml_stack_pop(ezxml_stack_t *ezstk, uintptr_t *find_addr);
+static void ezxml_stack_set(ezxml_stack_t *ezstk, uintptr_t find_addr);
 
 static char *EZXML_NIL[] = {NULL};  // empty, null terminated array of strings
 
@@ -53,23 +74,6 @@ ezxml_t ezxml_idx(ezxml_t xml, int idx)
     return xml;
 }
 
-static int ezxml_strcasecmp(const char *s1, const char *s2)
-{
-    unsigned char c1, c2;
-
-    do {
-        c1 = *s1++;
-        c2 = *s2++;
-        if (c1 != c2) {
-            c1 = tolower(c1);
-            c2 = tolower(c2);
-            if (c1 != c2)
-                return (int) c1 - (int) c2;
-        }
-    } while (c1 != 0);
-    return 0;
-}
-
 // returns the value of the requested tag attribute or NULL if not found
 const char *ezxml_attr(ezxml_t xml, const char *attr)
 {
@@ -78,19 +82,18 @@ const char *ezxml_attr(ezxml_t xml, const char *attr)
 
     if (!xml || !xml->attr)
         return NULL;
-    while (xml->attr[i] && ezxml_strcasecmp(attr, xml->attr[i]))
+    while (xml->attr[i] && strcasecmp(attr, xml->attr[i]))
         i += 2;
     if (xml->attr[i])
         return xml->attr[i + 1];  // found attribute
 
     while (root->xml.parent)
         root = (ezxml_root_t) root->xml.parent;  // root tag
-    for (i = 0; root->attr[i] && ezxml_strcasecmp(xml->name, root->attr[i][0]);
-         i++)
+    for (i = 0; root->attr[i] && strcasecmp(xml->name, root->attr[i][0]); i++)
         ;
     if (!root->attr[i])
         return NULL;  // no matching default attributes
-    while (root->attr[i][j] && ezxml_strcasecmp(attr, root->attr[i][j]))
+    while (root->attr[i][j] && strcasecmp(attr, root->attr[i][j]))
         j += 3;
     return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL;  // found default
 }
@@ -881,59 +884,105 @@ char *ezxml_toxml(ezxml_t xml)
     return realloc(s, len + 1);
 }
 
+#define RECURSION(x, y)                         \
+    {                                           \
+        ezxml_stack_set(&ezstk, (uintptr_t) x); \
+        ezxml_stack_push(&ezstk, y);            \
+        continue;                               \
+    }
+
 // free the memory allocated for the ezxml structure
 void ezxml_free(ezxml_t xml)
 {
-    ezxml_root_t root = (ezxml_root_t) xml;
-    int i, j;
-    char **a, *s;
+    /* Use the stack to convert recursion to iteration.
+     * Recursive causes stack overflow in some architectures with a small stack
+     * size.
+     */
+    ezxml_stack_t ezstk;
+    memset(&ezstk, 0x0, sizeof(ezxml_stack_t));
+    void *find_addr = 0;
+    uintptr_t tmp_addr = 0;
 
-    if (!xml)
-        return;
-    ezxml_free(xml->child);
-    ezxml_free(xml->ordered);
+    ezxml_stack_init(&ezstk);
+    ezxml_stack_push(&ezstk, xml);
+    ezxml_t node = xml;
 
-    if (!xml->parent) {                     // free root tag allocations
-        for (i = 10; root->ent[i]; i += 2)  // 0 - 9 are default entites (<>&"')
-            if ((s = root->ent[i + 1]) < root->s || s > root->e)
-                free(s);
-        free(root->ent);  // free list of general entities
+    ezxml_root_t root = (ezxml_root_t) node;
 
-        for (i = 0; (a = root->attr[i]); i++) {
-            for (j = 1; a[j++]; j += 2)  // free malloced attribute values
-                if (a[j] && (a[j] < root->s || a[j] > root->e))
-                    free(a[j]);
-            free(a);
+    while (ezstk.count > 0) {
+        node = ezxml_stack_pop(&ezstk, &tmp_addr);
+
+        if (tmp_addr != 0) {
+            find_addr = (void *) tmp_addr;
+            /* Go to the next address of the executed location. */
+            goto *find_addr;
         }
-        if (root->attr[0])
-            free(root->attr);  // free default attribute list
 
-        for (i = 0; root->pi[i]; i++) {
-            for (j = 1; root->pi[i][j]; j++)
-                ;
-            free(root->pi[i][j + 1]);
-            free(root->pi[i]);
-        }
-        if (root->pi[0])
-            free(root->pi);  // free processing instructions
+        /* Store the next address of the executed location. */
+        if (node->child)
+            RECURSION(&&find_child, node->child);
 
-        if (root->len == (unsigned int) -1)
-            free(root->m);  // malloced xml data
+    find_child:
+        if (node->ordered)
+            RECURSION(&&find_ordered, node->ordered);
+
+    find_ordered:
+        root = (ezxml_root_t) node;
+
+        // run free
+        if (!node->parent) { /* free root tag allocations */
+            /* 0 - 9 are default entites (<>&"') */
+            for (int i = 10; root->ent[i]; i += 2) {
+                char *s;
+                if ((s = root->ent[i + 1]) < root->s || s > root->e)
+                    free(s);
+            }
+            free(root->ent);  // free list of general entities
+
+            char **a;
+            for (int i = 0; (a = root->attr[i]); i++) {
+                // free malloced attribute values
+                for (int j = 1; a[j++]; j += 2)
+                    if (a[j] && (a[j] < root->s || a[j] > root->e))
+                        free(a[j]);
+                free(a);
+            }
+            if (root->attr[0])
+                free(root->attr);  // free default attribute list
+
+            for (int i = 0; root->pi[i]; i++) {
+                int j;
+                for (j = 1; root->pi[i][j]; j++)
+                    ;
+                free(root->pi[i][j + 1]);
+                free(root->pi[i]);
+            }
+            if (root->pi[0])
+                free(root->pi);  // free processing instructions
+
+            if (root->len == -1)
+                free(root->m);  // malloced xml data
 #ifndef EZXML_NOMMAP
-        else if (root->len)
-            munmap(root->m, root->len);  // mem mapped xml data
-#endif                                   // EZXML_NOMMAP
-        if (root->u)
-            free(root->u);  // utf8 conversion
-    }
+            else if (root->len)
+                munmap(root->m, root->len);  // mem mapped xml data
+#endif                                       // EZXML_NOMMAP
+            free(root->u);                   // utf8 conversion
+        }
 
-    ezxml_free_attr(xml->attr);  // tag attributes
-    if ((xml->flags & EZXML_TXTM))
-        free(xml->txt);  // character content
-    if ((xml->flags & EZXML_NAMEM))
-        free(xml->name);  // tag name
-    free(xml);
+        ezxml_free_attr(node->attr);  // tag attributes
+        if ((node->flags & EZXML_TXTM))
+            free(node->txt);  // character content
+        if ((node->flags & EZXML_NAMEM))
+            free(node->name);  // tag name
+
+        ezxml_stack_remove(&ezstk);
+        free(node);
+        node = NULL;
+    }
+    ezxml_stack_free(&ezstk);
 }
+
+#undef RECURSION
 
 // return parser error message or empty string if none
 const char *ezxml_error(ezxml_t xml)
@@ -1013,8 +1062,8 @@ ezxml_t ezxml_insert(ezxml_t xml, ezxml_t dest, size_t off)
     return xml;
 }
 
-// Adds a child tag. off is the offset of the child tag relative to the start
-// of the parent tag's character content. Returns the child tag.
+// Adds a child tag. off is the offset of the child tag relative to the
+// start of the parent tag's character content. Returns the child tag.
 ezxml_t ezxml_add_child(ezxml_t xml, const char *name, size_t off)
 {
     ezxml_t child;
@@ -1043,8 +1092,8 @@ ezxml_t ezxml_set_txt(ezxml_t xml, const char *txt)
     return xml;
 }
 
-// Sets the given tag attribute or adds a new attribute if not found. A value
-// of NULL will remove the specified attribute. Returns the tag given.
+// Sets the given tag attribute or adds a new attribute if not found. A
+// value of NULL will remove the specified attribute. Returns the tag given.
 ezxml_t ezxml_set_attr(ezxml_t xml, const char *name, const char *value)
 {
     int l = 0, c;
@@ -1066,7 +1115,8 @@ ezxml_t ezxml_set_attr(ezxml_t xml, const char *name, const char *value)
         xml->attr[l + 2] = NULL;       // null terminate attribute list
         xml->attr[l + 3] =
             realloc(xml->attr[l + 1], (c = strlen(xml->attr[l + 1])) + 2);
-        strcpy(xml->attr[l + 3] + c, " ");  // set name/value as not malloced
+        strcpy(xml->attr[l + 3] + c,
+               " ");  // set name/value as not malloced
         if (xml->flags & EZXML_DUP)
             xml->attr[l + 3][c] = EZXML_NAMEM;
     } else if (xml->flags & EZXML_DUP)
@@ -1123,7 +1173,8 @@ ezxml_t ezxml_cut(ezxml_t xml)
             cur->ordered = cur->ordered->ordered;  // patch ordered list
 
             cur = xml->parent->child;  // go back to head of subtag list
-            if (strcmp(cur->name, xml->name)) {  // not in first sibling list
+            if (strcmp(cur->name,
+                       xml->name)) {  // not in first sibling list
                 while (strcmp(cur->sibling->name, xml->name))
                     cur = cur->sibling;
                 if (cur->sibling == xml) {  // first of a sibling list
@@ -1141,4 +1192,82 @@ ezxml_t ezxml_cut(ezxml_t xml)
     }
     xml->ordered = xml->sibling = xml->next = NULL;
     return xml;
+}
+
+static void ezxml_stack_init(ezxml_stack_t *ezstk)
+{
+    if (ezstk->alloc_size)
+        return;
+
+    ezstk->stack = malloc(sizeof(ezxml_t) * EZXML_STACK_DEFAULT_SIZE);
+    ezstk->find_addr = malloc(sizeof(uintptr_t) * EZXML_STACK_DEFAULT_SIZE);
+    ezstk->count = 0;
+    ezstk->alloc_size = EZXML_STACK_DEFAULT_SIZE;
+
+    memset(ezstk->stack, 0x0, sizeof(ezxml_t) * EZXML_STACK_DEFAULT_SIZE);
+    memset(ezstk->find_addr, 0x0, sizeof(int) * EZXML_STACK_DEFAULT_SIZE);
+}
+
+static void ezxml_stack_free(ezxml_stack_t *ezstk)
+{
+    free(ezstk->stack);
+    free(ezstk->find_addr);
+    ezstk->alloc_size = 0;
+    ezstk->count = 0;
+}
+
+static int ezxml_stack_push(ezxml_stack_t *ezstk, ezxml_t node)
+{
+    // TODO: error handling if realloc fail.
+    if (ezstk->count == ezstk->alloc_size) {
+        ezxml_t *backupPtr = ezstk->stack;
+        ezstk->stack = realloc(
+            ezstk->stack,
+            sizeof(ezxml_t) * (ezstk->alloc_size + EZXML_STACK_ADD_SIZE));
+        if (ezstk->stack == NULL) {
+            free(backupPtr);
+            return -1;  // realloc fail
+        }
+
+        uintptr_t *backupIntPtr = ezstk->find_addr;
+        ezstk->find_addr = (uintptr_t *) realloc(
+            ezstk->find_addr,
+            sizeof(uintptr_t) * (ezstk->alloc_size + EZXML_STACK_ADD_SIZE));
+        if (!ezstk->find_addr) {
+            free(backupIntPtr);
+            return -1;  // realloc fail
+        }
+
+        ezstk->alloc_size += EZXML_STACK_ADD_SIZE;
+    }
+
+    *(ezstk->stack + ezstk->count) = node;
+    *(ezstk->find_addr + ezstk->count) = 0;
+    ezstk->count += 1;
+
+    return 0;
+}
+
+/* store the return address on the stack */
+static void ezxml_stack_set(ezxml_stack_t *ezstk, uintptr_t find_addr)
+{
+    *(ezstk->find_addr + ezstk->count - 1) = find_addr;
+}
+
+static ezxml_t ezxml_stack_pop(ezxml_stack_t *ezstk, uintptr_t *find_addr)
+{
+    size_t tmp_count = ezstk->count - 1;
+    if (!(ezstk->stack + tmp_count))
+        return NULL;
+    *find_addr = *(ezstk->find_addr + tmp_count);
+
+    return *(ezstk->stack + tmp_count);
+}
+
+/* remove last node in ezxml_stack_t */
+static void ezxml_stack_remove(ezxml_stack_t *ezstk)
+{
+    ezstk->count = ezstk->count - 1;
+    if ((ezstk->stack + ezstk->count))
+        memset(ezstk->stack + (ezstk->count), 0x0, sizeof(uintptr_t));
 }
