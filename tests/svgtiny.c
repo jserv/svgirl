@@ -11,7 +11,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define INPUT_FILE "tests/apple.svg"
+#define INPUT_FILE "tests/data/apple.svg"
 
 int main(int argc, char *argv[])
 {
