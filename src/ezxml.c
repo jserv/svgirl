@@ -773,16 +773,17 @@ static char *ezxml_toxml_r(ezxml_t xml,
                            size_t *len,
                            size_t *max,
                            size_t start,
-                           char ***attr)
+                           char ***attr,
+                           int child_level)
 {
     int i, j;
-    char *txt = (xml->parent) ? xml->parent->txt : "";
+    const char *txt = (xml->parent) ? xml->parent->txt : "";
     size_t off = 0;
 
     // parent character content up to this tag
     *s = ezxml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
-    while (*len + strlen(xml->name) + 4 > *max)  // reallocate s
+    while (*len + strlen(xml->name) + 3 > *max)  // reallocate s
         *s = realloc(*s, *max += EZXML_BUFSIZE);
 
     *len += sprintf(*s + *len, "<%s", xml->name);  // open tag
@@ -811,18 +812,23 @@ static char *ezxml_toxml_r(ezxml_t xml,
     }
     *len += sprintf(*s + *len, ">");
 
-    *s = (xml->child)
-             ? ezxml_toxml_r(xml->child, s, len, max, 0, attr)  // child
-             : ezxml_ampencode(xml->txt, -1, s, len, max, 0);   // data
+    while (*len + 3 > *max)  // reallocate s
+        *s = realloc(*s, *max += EZXML_BUFSIZE);
+
+    /* Step down to the next level: handle child. */
+    *s = (xml->child) ? ezxml_toxml_r(xml->child, s, len, max, 0, attr,
+                                      child_level + 1)                  // child
+                      : ezxml_ampencode(xml->txt, -1, s, len, max, 0);  // data
+
+    /* Step up from the last level: close tag. */
 
     while (*len + strlen(xml->name) + 4 > *max)  // reallocate s
         *s = realloc(*s, *max += EZXML_BUFSIZE);
 
-    *len += sprintf(*s + *len, "</%s>", xml->name);  // close tag
-
     while (txt[off] && off < xml->off)
         off++;  // make sure off is within bounds
-    return (xml->ordered) ? ezxml_toxml_r(xml->ordered, s, len, max, off, attr)
+    return (xml->ordered) ? ezxml_toxml_r(xml->ordered, s, len, max, off, attr,
+                                          child_level)
                           : ezxml_ampencode(txt + off, -1, s, len, max, 0);
 }
 
@@ -857,7 +863,7 @@ char *ezxml_toxml(ezxml_t xml)
     }
 
     xml->parent = xml->ordered = NULL;
-    s = ezxml_toxml_r(xml, &s, &len, &max, 0, root->attr);
+    s = ezxml_toxml_r(xml, &s, &len, &max, 0, root->attr, 0);
     xml->parent = p;
     xml->ordered = o;
 
