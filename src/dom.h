@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 John Chou <luckyjoou@gmail.com>
+ * Copyright (C) 2016 John Chou.
  * Copyright (C) 2016 David Phillip Oster.
  * Released under the MIT License, https://opensource.org/license/mit
  *

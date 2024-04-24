@@ -1,9 +1,8 @@
-/*
- * Copyright (C) 2016 John Chou <luckyjoou@gmail.com>
+/* ezxml wrapper for DOM manipulation.
+ *
+ * Copyright (C) 2016 John Chou.
  * Copyright (C) 2016 David Phillip Oster.
  * Released under the MIT License, https://opensource.org/license/mit
- *
- * ezxml wrapper for DOM manipulation.
  */
 
 #include "dom.h"
@@ -17,20 +16,18 @@ enum { MAGIC_DOCUMENT_NODE = 10000 };
 static void lower(char *s)
 {
     for (; *s; ++s) {
-        if (isupper(*s)) {
+        if (isupper(*s))
             *s = tolower(*s);
-        }
     }
 }
 
 static char *my_strdup(const uint8_t *data, size_t len)
 {
-    char *result = (char *) malloc(len + 1);
+    char *result = malloc(len + 1);
     memcpy(result, data, len);
     result[len] = '\0';
     return result;
 }
-
 
 dom_xml_parser *dom_xml_parser_create(void *dontCare1,
                                       void *dontCare2,
@@ -38,10 +35,9 @@ dom_xml_parser *dom_xml_parser_create(void *dontCare1,
                                       void *dontCare3,
                                       dom_document **outDocument)
 {
-    dom_document *docResult = (dom_document *) calloc(sizeof(dom_document), 1);
+    dom_document *docResult = calloc(sizeof(dom_document), 1);
     *outDocument = docResult;
-    dom_xml_parser *result =
-        (dom_xml_parser *) calloc(sizeof(dom_xml_parser), 1);
+    dom_xml_parser *result = calloc(sizeof(dom_xml_parser), 1);
     result->doc = docResult;
     return result;
 }
@@ -76,8 +72,7 @@ dom_xml_error dom_xml_parser_destroy(dom_xml_parser *parser)
 dom_exception dom_document_get_document_element(dom_document *document,
                                                 dom_element **outNode)
 {
-    dom_element *element = (dom_element *) calloc(sizeof(dom_element), 1);
-    /* element->node = xmlDocGetRootElement((xmlDoc *)(document->node)); */
+    dom_element *element = calloc(sizeof(dom_element), 1);
     element->node = document->node;
     element->ref = 1;
     *outNode = element;
@@ -88,7 +83,6 @@ dom_exception dom_document_get_element_by_id(dom_node *node,
                                              dom_string *string,
                                              dom_element **outNode)
 {
-    /* xmlAttrPtr attrPtr = xmlHasProp(node->node, (const xmlChar *)"id"); */
     const char *id = ezxml_attr(node->node, "id");
     if (id && 0 == strcasecmp(id, string->s)) {
         node->ref++;
@@ -96,7 +90,7 @@ dom_exception dom_document_get_element_by_id(dom_node *node,
         return DOM_NO_ERR;
     }
     *outNode = NULL;
-    /* TODO: Find id recursive! */
+    /* TODO: Find id recursively. */
     return DOM_NO_ERR;
 }
 
@@ -104,18 +98,13 @@ dom_exception dom_element_get_attribute(dom_node *node,
                                         dom_string *string,
                                         dom_string **outAttribute)
 {
-    /* xmlAttrPtr attrPtr = xmlHasProp(node->node, (const xmlChar *)string->s);
-     */
     const char *attr = ezxml_attr(node->node, string->s);
-    if (NULL == attr) {
-        if (strchr(string->s, ':')) {
-            fprintf(stderr, "TODO:dom_element_get_attribute - namespace %s\n",
-                    string->s);
-        }
-    } else {
+    if (attr)
         return dom_string_create_interned((const uint8_t *) attr, strlen(attr),
                                           outAttribute);
-    }
+    if (strchr(string->s, ':'))
+        fprintf(stderr, "TODO:dom_element_get_attribute - namespace %s\n",
+                string->s);
     *outAttribute = NULL;
     return DOM_NO_ERR;
 }
@@ -129,24 +118,22 @@ dom_exception dom_element_get_elements_by_tag_name(dom_element *element,
     int nodeCount = 0;
     for (ezxml_t candidate = ezxml_child(element->node, string->s); candidate;
          candidate = candidate->next) {
-        if (NULL == nodeList) {
-            nodeList =
-                (dom_element **) malloc(nodeCount * sizeof(dom_element *));
+        if (!nodeList) {
+            nodeList = malloc(nodeCount * sizeof(dom_element *));
         } else {
             dom_element **t =
                 realloc(nodeList, (1 + nodeCount) * sizeof(dom_element *));
             if (t) {
                 nodeList = t;
             } else {
-                for (int i = 0; i < nodeCount; ++i) {
+                for (int i = 0; i < nodeCount; ++i)
                     dom_node_unref(nodeList[i]);
-                }
                 free(nodeList);
                 *outNodeList = result;
                 return DOM_MEM_ERR;
             }
         }
-        dom_element *elem = (dom_element *) calloc(sizeof(dom_element), 1);
+        dom_element *elem = calloc(sizeof(dom_element), 1);
         elem->node = candidate;
         elem->ref = 1;
         nodeList[nodeCount++] = elem;
@@ -178,9 +165,8 @@ void dom_node_unref(dom_node *node)
         free(node);
     } else {
         node->ref--;
-        if (0 == node->ref) {
+        if (0 == node->ref)
             free(node);
-        }
     }
 }
 
@@ -206,12 +192,10 @@ void dom_nodelist_unref(dom_nodelist *nodeList)
     nodeList->ref--;
     if (0 == nodeList->ref) {
         int count = nodeList->count;
-        for (int i = 0; i < count; ++i) {
+        for (int i = 0; i < count; ++i)
             dom_node_unref(nodeList->nodes[i]);
-        }
-        if (0 < count) {
+        if (count > 0)
             free(nodeList->nodes);
-        }
         free(nodeList);
     }
 }
@@ -222,7 +206,7 @@ dom_exception dom_node_get_first_child(dom_element *element,
     dom_element *newElement = NULL;
     ezxml_t child = element->node->child;
     if (child) {
-        newElement = (dom_element *) calloc(sizeof(dom_element), 1);
+        newElement = calloc(sizeof(dom_element), 1);
         newElement->node = child;
         newElement->ref = 1;
     }
@@ -262,7 +246,7 @@ dom_exception dom_node_get_node_type(dom_node *node, dom_node_type *outType)
 
 int dom_string_caseless_isequal(dom_string *as, dom_string *bs)
 {
-    return 0 == strcasecmp(as->s, bs->s);
+    return !strcasecmp(as->s, bs->s);
 }
 
 dom_exception dom_node_get_next_sibling(dom_element *element,
@@ -313,7 +297,7 @@ dom_exception dom_string_create_interned(const uint8_t *data,
                                          size_t len,
                                          dom_string **outString)
 {
-    dom_string *newStr = (dom_string *) calloc(sizeof(dom_string), 1);
+    dom_string *newStr = calloc(sizeof(dom_string), 1);
     newStr->s = my_strdup(data, len);
     newStr->ref = 1;
     *outString = newStr;
@@ -327,7 +311,7 @@ char *dom_string_data(dom_string *str)
 
 int dom_string_isequal(dom_string *a, dom_string *b)
 {
-    return 0 == strcmp(a->s, b->s);
+    return !strcmp(a->s, b->s);
 }
 
 dom_string *dom_string_ref(dom_string *str)

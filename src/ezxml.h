@@ -26,7 +26,6 @@
 #ifndef _EZXML_H
 #define _EZXML_H
 
-#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +42,7 @@ extern "C" {
  * The different element types carried by an XML tree.
  *
  * NOTE: This is synchronized with DOM Level1 values
- *       See http://www.w3.org/TR/REC-DOM-Level-1/
+ *       See https://www.w3.org/TR/REC-DOM-Level-1/
  *
  * Actually this had diverged a bit, and now XML_DOCUMENT_TYPE_NODE should
  * be deprecated to use an XML_DTD_NODE.
