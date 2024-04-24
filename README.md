@@ -16,7 +16,7 @@ All supported SVG objects, for example circles, lines, and gradient
 filled shapes, are converted to flat-filled paths or a fragment of
 text, and all coordinates are converted, transformed etc. to pixels.
 
-SVGirl is freely redistributed under [MIT License](http://opensource.org/licenses/mit-license.php)
+SVGirl is freely redistributed under [MIT License](https://opensource.org/license/mit)
 
 ## SVG support
 

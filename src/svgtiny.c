@@ -1,7 +1,6 @@
 /*
  * This file is part of Libsvgtiny
- * Licensed under the MIT License,
- *                http://opensource.org/licenses/mit-license.php
+ * Released under the MIT License, https://opensource.org/license/mit
  * Copyright 2008-2009 James Bursa <james@semichrome.net>
  * Copyright 2012 Daniel Silverstone <dsilvers@netsurf-browser.org>
  */

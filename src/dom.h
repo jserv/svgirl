@@ -1,9 +1,7 @@
 /*
  * Copyright (C) 2016 John Chou <luckyjoou@gmail.com>
  * Copyright (C) 2016 David Phillip Oster.
- *
- * Licensed under the MIT License,
- *                http://opensource.org/licenses/mit-license.php
+ * Released under the MIT License, https://opensource.org/license/mit
  *
  * ezxml wrapper for DOM manipulation.
  */

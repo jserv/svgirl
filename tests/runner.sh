@@ -2,8 +2,7 @@
 #
 # run test images through libnssvg and count results
 #
-# Licensed under the MIT License,
-#                http://opensource.org/licenses/mit-license.php
+# Released under the MIT License, https://opensource.org/license/mit
 # Copyright (C) 2016 Vincent Sanders <vince@netsurf-browser.org>
 # Copyright (C) 2018 Jim Huang <jserv.tw@gmail.com>
 
